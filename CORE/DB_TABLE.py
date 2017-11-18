@@ -115,6 +115,7 @@ class RAW(DB_BASE, HAS_BASIC, HAS_EXTRA, HAS_TIMESTAMP, HAS_CLUE, HAS_THUMBNAIL)
     updated_by = relationship('USER',
                               primaryjoin='foreign(RAW.updated_by_name) == remote(USER.name)')
 
+
 data_atom_dependencies_table = Table('data_atom_dependencies',
                                      DB_BASE.metadata,
                                      Column('atom_sid', String(50),
@@ -192,8 +193,8 @@ class META(DB_BASE, HAS_BASIC, HAS_EXTRA, HAS_TIMESTAMP, HAS_FILE, HAS_CLUE):
                         backref=backref('metas', order_by='META.name', lazy='dynamic'))
     raw_sid = Column(String(50), index=True)
     raw = relationship('RAW',
-                        primaryjoin='foreign(META.raw_sid) == remote(RAW.sid)',
-                        backref=backref('metas', order_by='META.name', lazy='dynamic'))
+                       primaryjoin='foreign(META.raw_sid) == remote(RAW.sid)',
+                       backref=backref('metas', order_by='META.name', lazy='dynamic'))
     created_by_name = Column(String, index=True)
     created_by = relationship('USER',
                               primaryjoin='foreign(META.created_by_name) == remote(USER.name)',
@@ -263,6 +264,11 @@ class VIEW(DB_BASE, HAS_BASIC, HAS_EXTRA, HAS_TIMESTAMP):
                                primaryjoin='remote(foreign(VIEW_PERMISSION.view_sid)) == VIEW.sid',
                                lazy='dynamic',
                                backref=backref('view'))
+
+    @property
+    def shares(self):
+        return {x.shared_user_name: x for x in self.permissions}
+
     datas = relationship('DATA',
                          secondary=view_data_dependencies_table,
                          lazy='dynamic',

@@ -73,8 +73,8 @@ class MULTI_COPY(object):
 
     def run(self, from_files, to_files, file_size=None):
         self.done = False
-        workers = [mp.Process(target=worker, args=(self.queue, self.queue2, self.file_size, self.lock)) for x in
-                   range(self.pool_size)]
+        workers = [mp.Process(target=worker, args=(self.queue, self.queue2, self.file_size, self.lock))
+                   for x in range(self.pool_size)]
         [x.start() for x in workers]
 
         for file_pair in izip(from_files, to_files):

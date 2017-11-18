@@ -33,7 +33,7 @@ class RED_TRANSCODE(object):
     @property
     def clue(self):
         meta = self.metadata
-        return {'cam_clue': meta.get('D113_C001_0609M2', None),
+        return {'cam_clue': meta.get('Clip Name', None),
                 'vfx_seq_clue': None,
                 'vfx_shot_clue': None,
                 'scene_clue': meta.get('Scene', None),

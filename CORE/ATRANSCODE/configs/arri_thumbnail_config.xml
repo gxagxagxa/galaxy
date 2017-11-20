@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<arri>
+    <arriraw>
+        <shortsettings name="ARC" version="2">
+            <colorhandling>
+                <param name="colorencodingrange" value="fullRange"/>
+                <param name="colorspace" value="ITU709"/>
+            </colorhandling>
+            <downscale>
+                <param name="mode" value="SD_FROM_2880PX"/>
+            </downscale>
+        </shortsettings>
+    </arriraw>
+</arri>

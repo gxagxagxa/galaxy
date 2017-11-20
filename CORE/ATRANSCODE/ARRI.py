@@ -36,11 +36,11 @@ class ARRI_TRANSCODE(object):
         p1 = subprocess.Popen(first_cmd, stdout=subprocess.PIPE)
         p1.wait()
         first_csv = \
-        next((x for x in p1.communicate()[0].splitlines()[::-1] if 'Finished (csv):' in x), None).split(': ')[-1]
+            next((x for x in p1.communicate()[0].splitlines()[::-1] if 'Finished (csv):' in x), None).split(': ')[-1]
         p2 = subprocess.Popen(last_cmd, stdout=subprocess.PIPE)
         p2.wait()
         last_csv = \
-        next((x for x in p2.communicate()[0].splitlines()[::-1] if 'Finished (csv):' in x), None).split(': ')[-1]
+            next((x for x in p2.communicate()[0].splitlines()[::-1] if 'Finished (csv):' in x), None).split(': ')[-1]
 
         result = None
         with open(first_csv, 'r') as first_file:
@@ -55,7 +55,7 @@ class ARRI_TRANSCODE(object):
                 result['Duration'] = int(last_dict['Master TC Frame Count']) - \
                                      int(first_dict['Master TC Frame Count']) + 1
 
-        print first_csv, last_csv
+        # print first_csv, last_csv
         os.unlink(first_csv)
         os.unlink(last_csv)
         return result
@@ -131,13 +131,13 @@ class ARRI_TRANSCODE(object):
 if __name__ == '__main__':
     test = ARRI_TRANSCODE(
             # '/Volumes/BACKUP/TEST_Footage/Footage/Alexa_mini_RAW/S001C001_160215_R00H.mxf')
-            u'/Volumes/BACKUP/TEST_Footage/Footage/A136C011_141119_R6QB中文/A136C011_141119_R6QB.1346649.ari')
+            u'/Volumes/BACKUP/TEST_Footage/Footage/Alexa-Day/00100000148.0000025.ari')
     # print test.all_metadata
     # print test.basic_metadata
     # print test.lds_metadata
 
     import sys
-    from PySide.QtCore import  *
+    from PySide.QtCore import *
     from PySide.QtGui import *
 
     app = QApplication(sys.argv)

@@ -8,8 +8,8 @@
 from PySide.QtCore import *
 from PySide.QtGui import *
 from functools import partial
-from MToolButton import *
-from MItemView import MListView, MTableView
+from GUI.WIDGETS.MToolButton import *
+from WIDGETS.MItemView import MListView
 from CORE.DB_CONNECT import *
 from DECO import MY_CSS
 from IMAGES import IMAGE_PATH
@@ -100,7 +100,6 @@ class MMultiListViewWidget(QWidget):
         self.rootListView = MListView()
         self.detailWidget = MDetailWidget()
         self.detailWidget.setVisible(False)
-        # print sess().query(ATOM).filter(ATOM.parent_sid==None).all()
         self.rootListView.realModel.setDataList(sess().query(ATOM).all())
         self.connect(self.rootListView, SIGNAL('sigCurrentChanged(PyObject)'), self.slotCurrentChanged)
         self.splitter.addWidget(self.rootListView)
@@ -131,6 +130,7 @@ class MMultiListViewWidget(QWidget):
             parentListView.setChildListView = newListView
             self.listViewList.append(newListView)
         self.splitter.addWidget(newListView)
+        newListView.parentORM = parentORM
         newListView.realModel.setDataList(parentORM.sub_atoms.all())
 
     def currentListView(self):
@@ -156,37 +156,37 @@ class MBigPictureViewWidget(QWidget):
         self.setLayout(mainLay)
 
 
-class MTableViewWidget(QWidget):
-    def __init__(self, parent=None):
-        super(MTableViewWidget, self).__init__(parent)
-        self.initUI()
-
-    def initUI(self):
-        headerList = [{
-            "attr": "code",
-            "name": "Entity Name",
-            "width": 100
-        },
-            {
-                "attr": "link_type",
-                "name": "Upload/Local",
-                "width": 100
-            },
-            {
-                "attr": "name",
-                "name": "File Name",
-                "width": 400
-            },
-            {
-                "attr": "local_path",
-                "name": "Path",
-                "width": 600
-            }]
-        self.tableView = MTableView(headerList=headerList)
-        mainLay = QVBoxLayout()
-        mainLay.addWidget(QLabel('Table View Mode'))
-        mainLay.addWidget(self.tableView)
-        self.setLayout(mainLay)
+# class MTableViewWidget(QWidget):
+#     def __init__(self, parent=None):
+#         super(MTableViewWidget, self).__init__(parent)
+#         self.initUI()
+#
+#     def initUI(self):
+#         headerList = [{
+#             "attr": "code",
+#             "name": "Entity Name",
+#             "width": 100
+#         },
+#             {
+#                 "attr": "link_type",
+#                 "name": "Upload/Local",
+#                 "width": 100
+#             },
+#             {
+#                 "attr": "name",
+#                 "name": "File Name",
+#                 "width": 400
+#             },
+#             {
+#                 "attr": "local_path",
+#                 "name": "Path",
+#                 "width": 600
+#             }]
+#         self.tableView = MTableView(headerList=headerList)
+#         mainLay = QVBoxLayout()
+#         mainLay.addWidget(QLabel('Table View Mode'))
+#         mainLay.addWidget(self.tableView)
+#         self.setLayout(mainLay)
 
 
 class MFinder(QMainWindow):
@@ -209,11 +209,11 @@ class MFinder(QMainWindow):
         self.stackWidget = QStackedWidget()
         self.multiViewWidget = MMultiListViewWidget()
         self.bigPictureViewWidget = MBigPictureViewWidget()
-        self.tableViewWidget = MTableViewWidget()
+        # self.tableViewWidget = MTableViewWidget()
 
         self.stackWidget.addWidget(self.multiViewWidget)
         self.stackWidget.addWidget(self.bigPictureViewWidget)
-        self.stackWidget.addWidget(self.tableViewWidget)
+        # self.stackWidget.addWidget(self.tableViewWidget)
 
         centralWidget = QWidget()
         centralLay = QHBoxLayout()

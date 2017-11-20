@@ -6,8 +6,8 @@
 # Email : muyanru345@163.com
 ###################################################################
 
-from QT import *
-from IMAGES import IMAGE_PATH
+from GUI.QT import *
+from GUI.IMAGES import IMAGE_PATH
 
 
 class MToolButton(QToolButton):

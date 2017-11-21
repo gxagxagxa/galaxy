@@ -9,9 +9,9 @@ from DB_TABLE import *
 @DECO_SINGLETON()
 class DB_CONNECT(object):
     def __init__(self,
-                 connection='sqlite:////Users/andyguo/Desktop/ssg.db',
-                 # connection='postgresql+psycopg2://postgres:More@TD_2017@core_db.more.com:5432/postgres',
-                 echo=True,
+                 # connection='sqlite:////Users/andyguo/Desktop/ssg.db',
+                 connection='postgresql+psycopg2://postgres:More@TD_2017@core_db.more.com:5432/postgres',
+                 echo=False,
                  isolation_level='SERIALIZABLE'):
         self.connection = connection
         self.engine = create_engine(self.connection, echo=echo, isolation_level=isolation_level)
@@ -20,6 +20,18 @@ class DB_CONNECT(object):
 
     def create_db(self):
         DB_BASE.metadata.create_all(self.engine)
+
+    def create_root_atom(self):
+        first_session = None
+        try:
+            first_session = sess(new=true)
+            if not first_session.query(ATOM).filter(ATOM.name == ROOT_ATOM_NAME).first():
+                first_session.add(ATOM(name=ROOT_ATOM_NAME))
+                first_session.commit()
+        except:
+            pass
+        finally:
+            first_session.close()
 
     def __call__(self, *args, **kwargs):
         if kwargs.get('new', False):
@@ -33,6 +45,7 @@ sess = DB_CONNECT()
 if __name__ == '__main__':
     engine = sess.engine
     sess.create_db()
+    sess.create_root_atom()
     # smaker = sessionmaker(bind=engine)
     # session = DB_CONNECT.engine
     #
@@ -62,20 +75,20 @@ if __name__ == '__main__':
     #
     # sess().commit()
 
-    u1 = USER(name='guoxiaoao')
-    u2 = USER(name='test')
-
-    sess().add_all([u1, u2])
-    a1 = ATOM(name='aa')
-    d1 = DATA(name='111', thumbnail=QImage('/Users/guoxiaoao/Desktop/Screen Shot 2017-11-16 at 17.27.56.png'))
-    a1.datas.append(d1)
-    a1.datas.append(d1)
-    sess().add(a1)
-
-    sess().commit()
-
-    dd = sess().query(DATA).first()
-    print dd
+    # u1 = USER(name='guoxiaoao')
+    # u2 = USER(name='test')
+    #
+    # sess().add_all([u1, u2])
+    # a1 = ATOM(name='aa')
+    # d1 = DATA(name='111', thumbnail=QImage('/Users/guoxiaoao/Desktop/Screen Shot 2017-11-16 at 17.27.56.png'))
+    # a1.datas.append(d1)
+    # a1.datas.append(d1)
+    # sess().add(a1)
+    #
+    # sess().commit()
+    #
+    # dd = sess().query(DATA).first()
+    # print dd
     # dd_t = dd.thumbnail
     # print dd_t.size()
 
@@ -91,3 +104,10 @@ if __name__ == '__main__':
     # # mainWin = MainWindow()
     # a.show()
     # sys.exit(app.exec_())
+
+    # a1 = sess().query(ATOM).get('63e60bde-ce6c-11e7-b362-0cc47a73af8f')
+    # a2 = sess().query(ATOM).get('91db29d4-ce73-11e7-a656-f832e47271c1')
+    #
+    # ll = LINK(name='tt', parent=a1, target=a2)
+    # sess().add(ll)
+    # sess().commit()

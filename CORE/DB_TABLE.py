@@ -6,6 +6,11 @@ __author__ = 'andyguo'
 from DB_BASE import *
 
 
+# todo: data need size, atom
+# todo: data hash, not first but later?
+# todo: atom is empty or not
+
+
 class USER(DB_BASE, HAS_BASIC, HAS_TIMESTAMP, HAS_EXTRA, HAS_THUMBNAIL):
     name = Column(String, index=True)
 
@@ -25,6 +30,7 @@ tag_atom_dependencies_table = Table('tag_atom_dependencies',
 
 
 class ATOM(DB_BASE, HAS_BASIC, HAS_TIMESTAMP, HAS_EXTRA, HAS_THUMBNAIL):
+    is_empty = Column(Boolean, default=True)
     tags = relationship('TAG',
                         secondary=tag_atom_dependencies_table,
                         lazy='dynamic',
@@ -49,6 +55,14 @@ class ATOM(DB_BASE, HAS_BASIC, HAS_TIMESTAMP, HAS_EXTRA, HAS_THUMBNAIL):
                 'raw' : self.raws,
                 'data': self.datas,
                 'link': (x.target for x in self.links)}
+
+
+@listens_for(ATOM, 'before_insert', propagate=true)
+def insert_atom_link(mapper, connection, target):
+    # print '========== before insert ==========='
+    # print target
+    if target.parent:
+        target.parent.is_empty = False
 
 
 class LINK(DB_BASE, HAS_BASIC, HAS_TIMESTAMP, HAS_EXTRA, HAS_THUMBNAIL):
@@ -100,7 +114,7 @@ raw_atom_dependencies_table = Table('raw_atom_dependencies',
                                            primary_key=True))
 
 
-class RAW(DB_BASE, HAS_BASIC, HAS_EXTRA, HAS_TIMESTAMP, HAS_CLUE, HAS_THUMBNAIL):
+class RAW(DB_BASE, HAS_BASIC, HAS_EXTRA, HAS_TIMESTAMP, HAS_CLUE, HAS_THUMBNAIL, HAS_SIZE):
     atoms = relationship('ATOM',
                          secondary=raw_atom_dependencies_table,
                          innerjoin=True,
@@ -148,7 +162,7 @@ tag_data_dependencies_table = Table('tag_data_dependencies',
                                            primary_key=True))
 
 
-class DATA(DB_BASE, HAS_BASIC, HAS_EXTRA, HAS_TIMESTAMP, HAS_FILE, HAS_CLUE, HAS_THUMBNAIL):
+class DATA(DB_BASE, HAS_BASIC, HAS_EXTRA, HAS_TIMESTAMP, HAS_FILE, HAS_CLUE, HAS_THUMBNAIL, HAS_SIZE):
     atoms = relationship('ATOM',
                          secondary=data_atom_dependencies_table,
                          innerjoin=True,

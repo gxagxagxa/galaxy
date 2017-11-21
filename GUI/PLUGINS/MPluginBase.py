@@ -14,6 +14,7 @@ class MPluginBase(QObject):
     name = None
     icon = None
     needRefresh = True
+    shortcut = None
 
     def __init__(self, parent = None):
         super(MPluginBase, self).__init__(parent)

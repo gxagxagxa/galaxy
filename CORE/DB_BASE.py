@@ -25,7 +25,9 @@ try:
 except Exception as e:
     raise e
 
-current_user = os.environ.get('DB_USER_NAME', None) or getpass.getuser()
+CURRENT_USER_NAME = os.environ.get('DB_USER_NAME', None) or getpass.getuser()
+ROOT_ATOM_NAME = '.!0x5f3759df_this_is_a_magic_number_used_for_telling_which_atom_is_the_root' \
+                 '_and_should_not_be_used_by_user'
 
 
 @as_declarative()
@@ -128,7 +130,7 @@ def insert_base_link(mapper, connection, target):
         target.label = target.name
 
     if hasattr(target, 'created_by_name'):
-        target.created_by_name = current_user
+        target.created_by_name = CURRENT_USER_NAME
 
 
 @listens_for(DB_BASE, 'before_update', propagate=True)
@@ -136,4 +138,4 @@ def update_base_link(mapper, connection, target):
     # print '========== before insert ==========='
     # print target
     if hasattr(target, 'updated_by_name'):
-        target.updated_by_name = current_user
+        target.updated_by_name = CURRENT_USER_NAME

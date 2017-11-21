@@ -16,7 +16,6 @@ from GUI.WIDGETS.MInputDialog import MInputDialog
 from GUI.PLUGINS.MAddAtom import *
 
 
-
 class MHeaderView(QHeaderView):
     def __init__(self, orientation, parent=None):
         super(MHeaderView, self).__init__(orientation, parent)
@@ -83,6 +82,11 @@ class MListView(QListView):
         super(MListView, self).__init__(parent)
         self.parentORM = None
         self.realModel = MTableModel()
+        headerList = [
+            {'attr': 'name', 'name': 'Name'}
+        ]
+        self.headerList = headerList
+        self.setHeaderList(headerList)
         self.childListView = None
         self.sortFilterModel = QSortFilterProxyModel()
         self.sortFilterModel.setSourceModel(self.realModel)
@@ -90,6 +94,10 @@ class MListView(QListView):
         self.setModelColumn(0)
         self.setMenu()
         self.setSigSlot()
+
+    def setHeaderList(self, headerList):
+        if not headerList: return
+        self.realModel.setHeaders(headerList)
 
     def getSelectedItemsData(self):
         return [self.realModel.getORM(i) for i in self.getSelectedIndexes()]

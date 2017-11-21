@@ -11,6 +11,7 @@ from functools import partial
 from GUI.WIDGETS.MToolButton import *
 from WIDGETS.MItemView import MListView
 from CORE.DB_CONNECT import *
+from CORE.DB_UTIL import *
 from DECO import MY_CSS
 from IMAGES import IMAGE_PATH
 
@@ -94,20 +95,24 @@ class MLeftWidget(QWidget):
 class MMultiListViewWidget(QWidget):
     def __init__(self, parent=None):
         super(MMultiListViewWidget, self).__init__(parent)
+        scrollArea = QScrollArea()
+        scrollArea.setWidgetResizable(True)
         self.splitter = QSplitter()
         self.splitter.setOrientation(Qt.Horizontal)
         self.listViewList = []
         self.rootListView = MListView()
         self.detailWidget = MDetailWidget()
         self.detailWidget.setVisible(False)
-        self.rootListView._getORMList = lambda parentORM: sess().query(ATOM).filter(ATOM.parent_sid==None).all()
+
         self.connect(self.rootListView, SIGNAL('sigSelectedChanged(PyObject)'), self.slotCurrentChanged)
         self.splitter.addWidget(self.rootListView)
         self.splitter.addWidget(self.detailWidget)
+        scrollArea.setWidget(self.splitter)
         mainLay = QVBoxLayout()
-        mainLay.addWidget(self.splitter)
+        mainLay.addWidget(scrollArea)
         self.setLayout(mainLay)
-        self.rootListView.slotUpdate()
+
+        self.rootListView.slotUpdate(DB_UTIL.get_root(sess()))
 
     @Slot(object)
     def slotCurrentChanged(self, parentORMs):
@@ -124,8 +129,10 @@ class MMultiListViewWidget(QWidget):
                 if i > currentIndex:
                     self.splitter.setCollapsible(i, False)
             self.splitter.addWidget(self.detailWidget)
+        self.emit(SIGNAL('sigPathChanged(QString)'), DB_UTIL.hierarchy(sess(), parentORM))
 
     def addNewListView(self, parentListView, parentORM):
+        if parentListView is None: return
         newListView = parentListView.childListView
         if not newListView:
             newListView = MListView()
@@ -220,6 +227,8 @@ class MFinder(QMainWindow):
         self.stackWidget = QStackedWidget()
         self.multiViewWidget = MMultiListViewWidget()
         self.bigPictureViewWidget = MBigPictureViewWidget()
+        self.connect(self.multiViewWidget, SIGNAL('sigPathChanged(QString)'), self.slotSetWindowTitle)
+        self.connect(self.bigPictureViewWidget, SIGNAL('sigPathChanged(QString)'), self.slotSetWindowTitle)
         # self.tableViewWidget = MTableViewWidget()
 
         self.stackWidget.addWidget(self.multiViewWidget)
@@ -238,6 +247,7 @@ class MFinder(QMainWindow):
         self.createToolBars()
         self.createStatusBar()
         self.readSettings()
+        self.connect(QApplication.clipboard(), SIGNAL('dataChanged()'), self.slotClipboardDataChanged)
 
     def createActions(self):
         self.newAct = QAction(QIcon('%s/%s' % (IMAGE_PATH, 'icon-add.png')), "&New",
@@ -283,6 +293,10 @@ class MFinder(QMainWindow):
         self.fileToolBar.addWidget(self.multiViewButton)
         self.fileToolBar.addWidget(self.tableViewButton)
         self.fileToolBar.addWidget(self.searchLineEdit)
+
+    def slotClipboardDataChanged(self):
+        md = QApplication.clipboard().mimeData()
+        print md
 
     @Slot(int)
     def slotCurrentModeChanged(self, index):

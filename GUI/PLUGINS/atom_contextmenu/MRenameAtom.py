@@ -16,6 +16,7 @@ class MRenameAtom(MPluginBase):
     name = 'Rename ATOM'
     icon = 'icon-edit.png'
     needRefresh = True
+    shortcut = Qt.Key_F2
 
     def run(self, event):
         parentWidget = event.get('parentWidget')
@@ -30,6 +31,7 @@ class MRenameAtom(MPluginBase):
                     continue
                 else:
                     MAtom.update(orm, name=name)
+                    self.emit(SIGNAL('sigRefresh()'))
                     break
 
     def validate(self, event):

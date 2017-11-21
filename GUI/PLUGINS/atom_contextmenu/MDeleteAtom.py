@@ -8,23 +8,26 @@
 
 from GUI.PLUGINS.MPluginBase import MPluginBase
 from GUI.QT import *
-
+from GUI.PLUGINS.MTableHandle import *
 
 class MDeleteAtom(MPluginBase):
     name = 'Delete ATOM'
     icon = 'icon-trash.png'
+    needRefresh = True
 
     # def __init__(self, parent = None):
     #     super(MDeleteAtom, self).__init__(parent)
 
-    @staticmethod
-    def run(event):
+    def run(self, event):
         parentWidget = event.get('parentWidget')
         orm = event.get('orm')
-        QMessageBox.information(parentWidget, 'ok', 'success')
+        if MAtom.canDelete(orm):
+            MAtom.delete(orm)
+            self.emit(SIGNAL('sigRefresh()'))
+        else:
+            QMessageBox.critical(parentWidget, 'ERROR', 'This Atom has children. Can\'t delete')
 
-    @staticmethod
-    def validate(event):
+    def validate(self, event):
         parentWidget = event.get('parentWidget')
         orm = event.get('orm')
         print orm.name

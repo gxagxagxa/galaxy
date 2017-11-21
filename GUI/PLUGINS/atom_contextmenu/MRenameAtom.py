@@ -17,8 +17,7 @@ class MRenameAtom(MPluginBase):
     icon = 'icon-edit.png'
     needRefresh = True
 
-    @staticmethod
-    def run(event):
+    def run(self, event):
         parentWidget = event.get('parentWidget')
         orm = event.get('orm')
         result = True
@@ -33,6 +32,5 @@ class MRenameAtom(MPluginBase):
                     MAtom.update(orm, name=name)
                     break
 
-    @staticmethod
-    def validate(event):
+    def validate(self, event):
         return True

@@ -18,10 +18,8 @@ class MPluginBase(QObject):
     def __init__(self, parent = None):
         super(MPluginBase, self).__init__(parent)
 
-    @staticmethod
-    def run(event):
+    def run(self, event):
         pass
 
-    @staticmethod
-    def validate(event):
+    def validate(self, event):
         pass

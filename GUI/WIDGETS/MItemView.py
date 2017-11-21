@@ -13,7 +13,7 @@ from GUI.PLUGINS import *
 from GUI.QT import *
 from GUI.PLUGINS import MPluginManager
 from GUI.WIDGETS.MInputDialog import MInputDialog
-from GUI.PLUGINS.MAddAtom import *
+from GUI.PLUGINS.MTableHandle import *
 
 
 class MHeaderView(QHeaderView):
@@ -131,8 +131,24 @@ class MListView(QListView):
 
     @Slot(object)
     def slotAdd(self, parentORM):
-        name, result = MInputDialog.getText(self, 'New ATOM', 'Name:', 'NewATOM1', MAtom._nameRegExp)
-        print name, result
+        result = True
+        name = 'NewATOM1'
+        while result:
+            name, result = MInputDialog.getText(self, 'New ATOM', 'Name:', name, MAtom._nameRegExp)
+            if result:
+                if MAtom.validateExist(name, parentORM):
+                    QMessageBox.critical(self, 'ERROR', 'This name exists.')
+                    continue
+                else:
+                    MAtom.inject(name=name, parent=parentORM)
+                    self.slotUpdate(parentORM)
+                    break
+
+    def _getORMList(self, parentORM):
+        return parentORM.sub_atoms.all()
+
+    def _filterORMList(self, ormList):
+        return ormList
 
     @Slot(object)
     def slotUpdate(self, parentORM=None):

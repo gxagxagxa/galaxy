@@ -113,3 +113,11 @@ class MAtom(MTable):
         table = globals()[cls.tableName()]
         ORMs = session.query(table).filter(and_(getattr(table, attr, None) == name, table.parent == parentORM)).all()
         return bool(ORMs)
+
+    @classmethod
+    def canDelete(cls, orm):
+        children = orm.sub_atoms.all()
+        if len(children) >= 1:
+            return False
+        else:
+            return True

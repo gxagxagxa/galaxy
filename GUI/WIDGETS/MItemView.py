@@ -122,8 +122,8 @@ class MListView(QListView):
                                                    plugin.name) if plugin.icon else contextMenu.addAction(plugin.name)
                     self.connect(action, SIGNAL('triggered()'),
                                  partial(plugin.run, {'parentWidget': self, 'orm': dataORM}))
-                    # if plugin.needRefresh:
-                    #     self.connect(plugin, SIGNAL('sigRefresh()'), self.slotUpdate)
+                    if plugin.needRefresh:
+                        self.connect(plugin, SIGNAL('sigRefresh()'), partial(self.slotUpdate, self.parentORM))
         else:
             action = contextMenu.addAction('Add')
             self.connect(action, SIGNAL('triggered()'), partial(self.slotAdd, self.parentORM))
@@ -152,6 +152,7 @@ class MListView(QListView):
 
     @Slot(object)
     def slotUpdate(self, parentORM=None):
+        self.parentORM = parentORM
         self.emit(SIGNAL('sigUpdateData(PyObject)'), parentORM)
         ormList = self._getORMList(parentORM)
         if ormList:

@@ -4,7 +4,6 @@ from CORE.DB_CONNECT import *
 
 class MTable(object):
     _nameRegExp = QRegExp("^([a-z0-9\-]+)$")
-    _shortRegExp = _nameRegExp
 
     @classmethod
     def getORMFromName(cls, name, attr='label'):
@@ -59,16 +58,10 @@ class MTable(object):
         return bool(result == QValidator.Acceptable)
 
     @classmethod
-    def validateShortName(cls, name):
-        nameValidator = QRegExpValidator(cls._shortRegExp)
-        result, _, _ = nameValidator.validate(name, 0)
-        return bool(result == QValidator.Acceptable)
-
-    @classmethod
-    def validateExist(cls, name, projectORM, attr='label'):
+    def validateExist(cls, name, parentORM, attr='name'):
         session = sess()
         table = globals()[cls.tableName()]
-        ORMs = session.query(table).filter(and_(getattr(table, attr, None) == name, table.project == projectORM)).all()
+        ORMs = session.query(table).filter(and_(getattr(table, attr, None) == name, table.parent == parentORM)).all()
         return bool(ORMs)
 
     @classmethod
@@ -104,15 +97,7 @@ class MTable(object):
 
 
 class MAtom(MTable):
-    _nameRegExp = QRegExp("^([a-z0-9\-]+)_([a-z0-9\-]+)$")
-    _shortRegExp = QRegExp("^([a-z0-9\-]+)$")
-
-    @classmethod
-    def validateExist(cls, name, parentORM, attr='name'):
-        session = sess()
-        table = globals()[cls.tableName()]
-        ORMs = session.query(table).filter(and_(getattr(table, attr, None) == name, table.parent == parentORM)).all()
-        return bool(ORMs)
+    _nameRegExp = QRegExp("^([a-z0-9\-]_\.+)$")
 
     @classmethod
     def canDelete(cls, orm):
@@ -121,3 +106,11 @@ class MAtom(MTable):
             return False
         else:
             return True
+
+
+class MData(MTable):
+    _nameRegExp = QRegExp("^([a-z0-9\-]_\.+)$")
+
+    @classmethod
+    def canDelete(cls, orm):
+        return True

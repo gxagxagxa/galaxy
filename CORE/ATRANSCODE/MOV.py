@@ -54,7 +54,7 @@ class MOV_TRANSCODE(object):
                                                                                                       '00:00:00:00')),
                                       fps=result['project_fps'])
 
-        result['start_fc'].framecount()
+        result['start_fc'] = result['start_tc'].framecount()
         result['duration'] = int(float(self.all_metadata.get('format').get('duration')) * result['record_fps'])
         result['end_tc'] = TIMECODE(result['start_tc'].framecount() + result['duration'] - 1,
                                     fps=result['record_fps'])

@@ -47,7 +47,20 @@ class ATOM(DB_BASE, HAS_BASIC, HAS_TIMESTAMP, HAS_EXTRA, HAS_THUMBNAIL):
     def children(self):
         return {'atom': self.sub_atoms,
                 'raw' : self.raws,
-                'data': self.datas}
+                'data': self.datas,
+                'link': (x.target for x in self.links)}
+
+
+class LINK(DB_BASE, HAS_BASIC, HAS_TIMESTAMP, HAS_EXTRA, HAS_THUMBNAIL):
+    parent_sid = Column(String, index=True)
+    parent = relationship('ATOM',
+                          primaryjoin='foreign(LINK.parent_sid) == remote(ATOM.sid)',
+                          backref=backref('links', order_by='LINK.name', lazy='dynamic'))
+
+    target_sid = Column(String, index=True)
+    target = relationship('ATOM',
+                          primaryjoin='foreign(LINK.target_sid) == remote(ATOM.sid)',
+                          backref=backref('sources', order_by='LINK.name', lazy='dynamic'))
 
 
 class TAG(DB_BASE, HAS_BASIC, HAS_EXTRA, HAS_TIMESTAMP):

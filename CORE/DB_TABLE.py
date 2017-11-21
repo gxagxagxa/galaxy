@@ -50,19 +50,11 @@ class ATOM(DB_BASE, HAS_BASIC, HAS_TIMESTAMP, HAS_EXTRA, HAS_THUMBNAIL):
                           backref=backref('sub_atoms', order_by='ATOM.name', lazy='dynamic'))
 
     @property
-    def children(self):
+    def items(self):
         return {'atom': self.sub_atoms,
                 'raw' : self.raws,
                 'data': self.datas,
-                'link': (x.target for x in self.links)}
-
-
-@listens_for(ATOM, 'before_insert', propagate=true)
-def insert_atom_link(mapper, connection, target):
-    # print '========== before insert ==========='
-    # print target
-    if target.parent:
-        target.parent.is_empty = False
+                'link': self.links}
 
 
 class LINK(DB_BASE, HAS_BASIC, HAS_TIMESTAMP, HAS_EXTRA, HAS_THUMBNAIL):

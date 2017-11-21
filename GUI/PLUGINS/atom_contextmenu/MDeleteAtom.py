@@ -14,9 +14,7 @@ class MDeleteAtom(MPluginBase):
     name = 'Delete ATOM'
     icon = 'icon-trash.png'
     needRefresh = True
-
-    # def __init__(self, parent = None):
-    #     super(MDeleteAtom, self).__init__(parent)
+    shortcut = QKeySequence.Delete
 
     def run(self, event):
         parentWidget = event.get('parentWidget')

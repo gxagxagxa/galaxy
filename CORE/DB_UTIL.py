@@ -4,6 +4,7 @@
 __author__ = 'andyguo'
 
 from DB_CONNECT import *
+from itertools import chain
 
 
 class DB_UTIL(object):
@@ -18,6 +19,29 @@ class DB_UTIL(object):
     @classmethod
     def hierarchy(cls, session, orm, posix=False):
         pass
+
+    @classmethod
+    def get_root(cls, session):
+        return session.query(ATOM).filter(ATOM.name == ROOT_ATOM_NAME).one()
+
+    @classmethod
+    def traverse(cls, session, orm, recursive=False):
+        def non_recursive_traverse(orm, result=None):
+            if isinstance(orm, ATOM):
+                return chain(*[value for value in orm.children.values()])
+
+        def recursive_traverse(orm, result=None):
+            if isinstance(orm, (ATOM, VIEW)):
+                return chain(*[value for value in orm.children.values()])
+
+
+        if isinstance(orm, (DATA, RAW)):
+            return None
+
+        if recursive:
+            return recursive_traverse(orm)
+        else:
+            return non_recursive_traverse(orm)
 
     @classmethod
     def advanced_filter(cls, session, model_class_name, m_filter, sql_expr=None):
@@ -85,5 +109,8 @@ if __name__ == '__main__':
     # print kk
     # print DB_UTIL.advanced_filter(sess(), 'tag', m_filter).all()
 
-    vv1 = sess().query(VIEW).first()
-    print vv1.items.get('search').all()[0].items
+    ss = sess()
+    root = DB_UTIL.get_root(ss)
+    print root
+    for x in DB_UTIL.traverse(ss, root):
+        print x

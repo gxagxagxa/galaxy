@@ -133,7 +133,16 @@ class MMultiListViewWidget(QWidget):
             parentListView.setChildListView(newListView)
             self.listViewList.append(newListView)
             self.splitter.addWidget(newListView)
+        else:
+            self.clearDownstreamListView(newListView)
         newListView.slotUpdate(parentORM)
+
+    def clearDownstreamListView(self, startListView):
+        child = startListView.childListView
+        if child:
+            child.clear()
+            self.clearDownstreamListView(child)
+
 
     def currentListView(self):
         return None

@@ -12,7 +12,7 @@ from GUI.QT import *
 
 class MPluginBase(QObject):
     name = None
-    icon = None
+    icon = 'icon-default.png'
     needRefresh = True
     shortcut = None
 

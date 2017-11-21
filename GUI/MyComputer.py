@@ -100,18 +100,21 @@ class MMultiListViewWidget(QWidget):
         self.rootListView = MListView()
         self.detailWidget = MDetailWidget()
         self.detailWidget.setVisible(False)
-        self.rootListView.realModel.setDataList(sess().query(ATOM).all())
-        self.connect(self.rootListView, SIGNAL('sigCurrentChanged(PyObject)'), self.slotCurrentChanged)
+        self.rootListView._getORMList = lambda parentORM: sess().query(ATOM).filter(ATOM.parent_sid==None).all()
+        self.connect(self.rootListView, SIGNAL('sigSelectedChanged(PyObject)'), self.slotCurrentChanged)
         self.splitter.addWidget(self.rootListView)
         self.splitter.addWidget(self.detailWidget)
         mainLay = QVBoxLayout()
-        # mainLay.addWidget(QLabel('Multi list view mode'))
         mainLay.addWidget(self.splitter)
         self.setLayout(mainLay)
+        self.rootListView.slotUpdate()
 
     @Slot(object)
-    def slotCurrentChanged(self, parentORM):
+    def slotCurrentChanged(self, parentORMs):
         parentListView = self.sender()
+        parentORM = parentORMs
+        if len(parentORMs)>=1:
+            parentORM = parentORMs[0]
         if isinstance(parentORM, ATOM):
             self.detailWidget.setVisible(False)
             self.addNewListView(parentListView, parentORM)
@@ -126,12 +129,11 @@ class MMultiListViewWidget(QWidget):
         newListView = parentListView.childListView
         if not newListView:
             newListView = MListView()
-            self.connect(self.rootListView, SIGNAL('sigCurrentChanged(PyObject)'), self.slotCurrentChanged)
-            parentListView.setChildListView = newListView
+            self.connect(newListView, SIGNAL('sigSelectedChanged(PyObject)'), self.slotCurrentChanged)
+            parentListView.setChildListView(newListView)
             self.listViewList.append(newListView)
-        self.splitter.addWidget(newListView)
-        newListView.parentORM = parentORM
-        newListView.realModel.setDataList(parentORM.sub_atoms.all())
+            self.splitter.addWidget(newListView)
+        newListView.slotUpdate(parentORM)
 
     def currentListView(self):
         return None

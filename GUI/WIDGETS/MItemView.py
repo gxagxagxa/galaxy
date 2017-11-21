@@ -7,13 +7,10 @@
 
 from functools import partial
 
-from MItemModel import MTableModel
 from GUI.IMAGES import IMAGE_PATH
-from GUI.PLUGINS import *
-from GUI.QT import *
 from GUI.PLUGINS import MPluginManager
-from GUI.WIDGETS.MInputDialog import MInputDialog
 from GUI.PLUGINS.MTableHandle import *
+from MItemModel import MTableModel
 
 
 class MHeaderView(QHeaderView):
@@ -113,30 +110,24 @@ class MListView(QListView):
         if proxyIndex.isValid():
             realIndex = self.sortFilterModel.mapToSource(proxyIndex)
             dataORM = self.realModel.getORM(realIndex)
-            tableName = getattr(dataORM, '__tablename__') \
-                if hasattr(dataORM, '__tablename__') else dataORM.get('type').lower()
-            event = '{table}_contextmenu'.format(table=tableName)
+            event = '{table}_contextmenu'.format(table=getattr(dataORM, '__tablename__', None))
             for plugin in MPluginManager.loadPlugins(self, event):
                 if plugin.validate({'orm': dataORM}):
-                    action = contextMenu.addAction(QIcon(IMAGE_PATH + '/' + plugin.icon),
-                                                   plugin.name) if plugin.icon else contextMenu.addAction(plugin.name)
+                    action = contextMenu.addAction(QIcon(IMAGE_PATH + '/' + plugin.icon), plugin.name)
                     self.connect(action, SIGNAL('triggered()'),
                                  partial(plugin.run, {'parentWidget': self, 'orm': dataORM}))
-                    if plugin.shortcut:
+                    if plugin.shortcut is not None:
                         action.setShortcut(QKeySequence(plugin.shortcut))
                     if plugin.needRefresh:
                         self.connect(plugin, SIGNAL('sigRefresh()'), partial(self.slotUpdate, self.parentORM))
         else:
-            tableName = getattr(self.parentORM, '__tablename__') \
-                if hasattr(self.parentORM, '__tablename__') else self.parentORM.get('type').lower()
-            event = '{table}_empty_contextmenu'.format(table=tableName)
+            event = '{table}_empty_contextmenu'.format(table=getattr(self.parentORM, '__tablename__', None))
             for plugin in MPluginManager.loadPlugins(self, event):
                 if plugin.validate({'orm': self.parentORM}):
-                    action = contextMenu.addAction(QIcon(IMAGE_PATH + '/' + plugin.icon),
-                                                   plugin.name) if plugin.icon else contextMenu.addAction(plugin.name)
+                    action = contextMenu.addAction(QIcon(IMAGE_PATH + '/' + plugin.icon), plugin.name)
                     self.connect(action, SIGNAL('triggered()'),
                                  partial(plugin.run, {'parentWidget': self, 'orm': self.parentORM}))
-                    if plugin.shortcut:
+                    if plugin.shortcut is not None:
                         action.setShortcut(QKeySequence(plugin.shortcut))
                     if plugin.needRefresh:
                         self.connect(plugin, SIGNAL('sigRefresh()'), partial(self.slotUpdate, self.parentORM))

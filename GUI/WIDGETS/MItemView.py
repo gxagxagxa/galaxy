@@ -122,27 +122,25 @@ class MListView(QListView):
                                                    plugin.name) if plugin.icon else contextMenu.addAction(plugin.name)
                     self.connect(action, SIGNAL('triggered()'),
                                  partial(plugin.run, {'parentWidget': self, 'orm': dataORM}))
+                    if plugin.shortcut:
+                        action.setShortcut(QKeySequence(plugin.shortcut))
                     if plugin.needRefresh:
                         self.connect(plugin, SIGNAL('sigRefresh()'), partial(self.slotUpdate, self.parentORM))
         else:
-            action = contextMenu.addAction('Add')
-            self.connect(action, SIGNAL('triggered()'), partial(self.slotAdd, self.parentORM))
+            tableName = getattr(self.parentORM, '__tablename__') \
+                if hasattr(self.parentORM, '__tablename__') else self.parentORM.get('type').lower()
+            event = '{table}_empty_contextmenu'.format(table=tableName)
+            for plugin in MPluginManager.loadPlugins(self, event):
+                if plugin.validate({'orm': self.parentORM}):
+                    action = contextMenu.addAction(QIcon(IMAGE_PATH + '/' + plugin.icon),
+                                                   plugin.name) if plugin.icon else contextMenu.addAction(plugin.name)
+                    self.connect(action, SIGNAL('triggered()'),
+                                 partial(plugin.run, {'parentWidget': self, 'orm': self.parentORM}))
+                    if plugin.shortcut:
+                        action.setShortcut(QKeySequence(plugin.shortcut))
+                    if plugin.needRefresh:
+                        self.connect(plugin, SIGNAL('sigRefresh()'), partial(self.slotUpdate, self.parentORM))
         contextMenu.exec_(cur)
-
-    @Slot(object)
-    def slotAdd(self, parentORM):
-        result = True
-        name = 'NewATOM1'
-        while result:
-            name, result = MInputDialog.getText(self, 'New ATOM', 'Name:', name, MAtom._nameRegExp)
-            if result:
-                if MAtom.validateExist(name, parentORM):
-                    QMessageBox.critical(self, 'ERROR', 'This name exists.')
-                    continue
-                else:
-                    MAtom.inject(name=name, parent=parentORM)
-                    self.slotUpdate(parentORM)
-                    break
 
     def _getORMList(self, parentORM):
         return parentORM.sub_atoms.all()

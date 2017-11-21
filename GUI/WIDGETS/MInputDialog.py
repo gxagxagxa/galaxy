@@ -16,6 +16,7 @@ class MInputDialog(QDialog):
         self.lineEdit = QLineEdit()
         if reg:
             self.setValidator(reg)
+        self.lineEdit.setText(defaultText)
         okButton = QPushButton(self.tr('ok'))
         self.connect(okButton, SIGNAL('clicked()'), self.slotOK)
         cancelButton = QPushButton(self.tr('cancel'))
@@ -29,6 +30,7 @@ class MInputDialog(QDialog):
         layout.addLayout(butLay)
         self.setLayout(layout)
         self.setWindowTitle(title)
+        self.lineEdit.setSelection(0, len(defaultText))
 
     def setValidator(self, reg):
         validator = QRegExpValidator(reg, self)

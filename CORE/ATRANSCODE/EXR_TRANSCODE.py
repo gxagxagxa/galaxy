@@ -115,7 +115,7 @@ class EXR_HEADER(PACKED_BASE):
             return str(pdatetime.fromtimestamp(os.fstat(f.fileno()).st_ctime))
 
 
-class EXR(object):
+class EXR_TRANSCODE(object):
     def __init__(self, first_exr, last_exr=None):
         self.filename = first_exr
         self.last_filename = last_exr
@@ -218,7 +218,7 @@ if __name__ == '__main__':
     exrfile = '/Volumes/BACKUP/TEST_Footage/Footage/EXR/deep/part_blueBalloon.exr'
     exrfile = '/Volumes/BACKUP/TEST_Footage/Footage/EXR/A003C028_140924_R6QB.0403757.exr'
     # exrfile = '/Users/mac/Desktop/for_andy_testing/gz_0220_lgt_watertest_v0005.VRayRawGlobalIllumination_tiled.1001.exr'
-    test = EXR(exrfile)
+    test = EXR_TRANSCODE(exrfile)
     print test.all_metadata
 
     import sys

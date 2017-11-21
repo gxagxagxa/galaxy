@@ -19,7 +19,8 @@ class MPluginManager(object):
                 try:
                     pluginName = str(i.stem)
                     plugin = __import__('GUI.PLUGINS.%s.%s' % (event, pluginName), fromlist=[pluginName])
-                    resultList.append(getattr(plugin, pluginName))
+                    classObj = getattr(plugin, pluginName)
+                    resultList.append(classObj())
                 except:
                     import traceback
                     print traceback.print_exc()

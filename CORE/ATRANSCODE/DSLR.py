@@ -56,8 +56,9 @@ class DSLR_TRANSCODE(object):
         result['end_tc'] = None
         result['start_fc'] = None
         result['end_fc'] = None
-        result['shot_date'] = pdatetime.strptime(self.all_metadata.get('kMDItemContentCreationDate')[:10],
-                                                 '%Y-%m-%d').date() if self.get('creation', None) else None
+        result['shot_date'] = pdatetime.strptime(meta.get('kMDItemContentCreationDate')[:10],
+                                                 '%Y-%m-%d').date() if meta.get('kMDItemContentCreationDate',
+                                                                                None) else None
         result['iso'] = meta.get('kMDItemISOSpeed', None)
         result['white_balance'] = meta.get('kMDItemWhiteBalance', None)
         result['shutter'] = None
@@ -72,7 +73,7 @@ class DSLR_TRANSCODE(object):
     def lds_metadata(self):
         meta = self.all_metadata
         result = {}
-        result['lens'] = None
+        result['lens'] = meta.get('kMDItemAcquisitionModel', None)
         result['aperture'] = meta.get('kMDItemAperture', None)
         result['focal'] = meta.get('kMDItemFocalLength', None)
         result['focus'] = None
@@ -81,7 +82,6 @@ class DSLR_TRANSCODE(object):
 
     @property
     def clue(self):
-        meta = self.all_metadata
         return {'cam_clue'     : APATH(self.filename).stem,
                 'vfx_seq_clue' : None,
                 'vfx_shot_clue': None,
@@ -92,13 +92,12 @@ class DSLR_TRANSCODE(object):
     def thumbnail(self, frame=0, qimage=True):
         temp_image = NamedTemporaryFile().name
         # print temp_image
-        cmd = ['ffmpeg', '-y',
-               '-thread_queue_size', '1024',
-               '-i', self.filename,
-               '-vframes', '1',
-               '-vf', 'scale=720:-1',
-               '-q:v', '3',
-               temp_image + '.jpg']
+        cmd = ['sips',
+               '-Z', '720',
+               '-s', 'format', 'jpeg',
+               self.filename,
+               '--out', temp_image + '.jpg']
+        # print cmd
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
         p.wait()
         temp_image = temp_image + '.jpg'
@@ -116,20 +115,20 @@ if __name__ == '__main__':
 
     # print 1.0 / Fraction('1/24')
     test = DSLR_TRANSCODE(
-            '/Volumes/BACKUP/TEST_Footage/HDRI_TEST/包围曝光素材/_MG_6093.CR2')
-    pprint(test.all_metadata)
+            u'/Volumes/BACKUP/TEST_Footage/HDRI_TEST/包围曝光素材/_MG_6093.CR2')
+    # pprint(test.all_metadata)
     # pprint(test.basic_metadata)
     # print test.lds_metadata
 
-    # import sys
-    # from PySide.QtCore import *
-    # from PySide.QtGui import *
-    #
-    # app = QApplication(sys.argv)
-    # a = QLabel()
-    # qq = QPixmap()
-    # qq.convertFromImage(test.thumbnail())
-    # a.setPixmap(qq)
-    # # mainWin = MainWindow()
-    # a.show()
-    # sys.exit(app.exec_())
+    import sys
+    from PySide.QtCore import *
+    from PySide.QtGui import *
+
+    app = QApplication(sys.argv)
+    a = QLabel()
+    qq = QPixmap()
+    qq.convertFromImage(test.thumbnail())
+    a.setPixmap(qq)
+    # mainWin = MainWindow()
+    a.show()
+    sys.exit(app.exec_())

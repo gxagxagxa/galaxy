@@ -101,6 +101,16 @@ class HAS_CLUE(object):
     take_clue = Column(String)
 
 
+class HAS_SIZE(object):
+    @declared_attr
+    def file_size(cls):
+        return deferred(Column(Integer, default=0))
+
+    @declared_attr
+    def file_hash(cls):
+        return deferred(Column(String))
+
+
 class HAS_THUMBNAIL(object):
     @declared_attr
     def thumbnail_base64(cls):

@@ -25,15 +25,50 @@ class DB_UTIL(object):
         return session.query(ATOM).filter(ATOM.name == ROOT_ATOM_NAME).one()
 
     @classmethod
+    def file_size(cls, session, orm):
+        def recursive_calculate(orm, result=None):
+            if result is None:
+                result = []
+
+            if isinstance(orm, (ATOM, VIEW)):
+                for x in DB_UTIL.traverse(session, orm):
+                    # print now_dict['current'].name, x.name
+                    resolve_atom = x.target if isinstance(x, VIEW) else x
+                    recursive_calculate(resolve_atom, result=result)
+
+            elif isinstance(orm, (DATA, RAW)):
+                result.append(orm.file_size)
+
+            return result
+
+        if isinstance(orm, (DATA, RAW)):
+            return orm.file_size
+        else:
+            return sum(recursive_calculate(orm))
+
+    @classmethod
     def traverse(cls, session, orm, recursive=False):
         def non_recursive_traverse(orm, result=None):
-            if isinstance(orm, ATOM):
-                return chain(*[value for value in orm.children.values()])
+            if isinstance(orm, (ATOM, VIEW)):
+                return chain(*[value for value in orm.items.values()])
 
         def recursive_traverse(orm, result=None):
-            if isinstance(orm, (ATOM, VIEW)):
-                return chain(*[value for value in orm.children.values()])
+            if result is None:
+                result = {'current' : orm,
+                          'children': []}
 
+            now_dict = result
+            if isinstance(orm, (ATOM, VIEW)):
+                for x in non_recursive_traverse(orm):
+                    # print now_dict['current'].name, x.name
+                    now_dict['children'].append({'current': x, 'children': []})
+                    resolve_atom = x.target if isinstance(x, VIEW) else x
+                    recursive_traverse(resolve_atom, result=now_dict['children'][-1])
+
+            elif isinstance(orm, (DATA, RAW)):
+                now_dict['children'].append({'current': orm, 'children': []})
+
+            return result
 
         if isinstance(orm, (DATA, RAW)):
             return None
@@ -101,6 +136,7 @@ class DB_UTIL(object):
 
 if __name__ == '__main__':
     # from collections import OrderedDict
+    from pprint import pprint
 
     # m_filter = {'and': [{'or': ['data;name;like;A001', 'tag;name;in;sky']}]}
     # m_filter = {'and': ['data;name;like;%C002%']}
@@ -111,6 +147,9 @@ if __name__ == '__main__':
 
     ss = sess()
     root = DB_UTIL.get_root(ss)
-    print root
-    for x in DB_UTIL.traverse(ss, root):
-        print x
+    # print root
+    # print DB_UTIL.traverse(ss, root, recursive=True)
+    aa = DB_UTIL.traverse(ss, root, recursive=True)
+
+    print [x['current'].name for x in aa['children'][0]['children']]
+    # print x.name

@@ -106,3 +106,10 @@ class MTable(object):
 class MAtom(MTable):
     _nameRegExp = QRegExp("^([a-z0-9\-]+)_([a-z0-9\-]+)$")
     _shortRegExp = QRegExp("^([a-z0-9\-]+)$")
+
+    @classmethod
+    def validateExist(cls, name, parentORM, attr='name'):
+        session = sess()
+        table = globals()[cls.tableName()]
+        ORMs = session.query(table).filter(and_(getattr(table, attr, None) == name, table.parent == parentORM)).all()
+        return bool(ORMs)

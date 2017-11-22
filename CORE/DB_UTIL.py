@@ -5,6 +5,7 @@ __author__ = 'andyguo'
 
 from DB_CONNECT import *
 from itertools import chain
+from collections import deque
 
 
 class DB_UTIL(object):
@@ -58,28 +59,27 @@ class DB_UTIL(object):
 
     @classmethod
     def file_size(cls, orm):
-        def recursive_calculate(orm, result=None):
-            if result is None:
-                result = []
+        total = 0
+        for x in DB_UTIL.walk(orm):
+            if isinstance(x, (DATA, RAW)):
+                total += x.file_size
 
-            if isinstance(orm, (ATOM, LINK)):
-                for x in DB_UTIL.traverse(orm):
-                    # print now_dict['current'].name, x.name
-                    resolve_atom = x.target if isinstance(x, LINK) else x
-                    recursive_calculate(resolve_atom, result=result)
+        return total
 
-            elif isinstance(orm, (DATA, RAW)):
-                result.append(orm.file_size)
-
-            return result
-
-        if isinstance(orm, (DATA, RAW)):
-            return orm.file_size
-        else:
-            return sum(recursive_calculate(orm))
+    @classmethod
+    def walk(cls, orm):
+        stack = deque()
+        stack.append(orm)
+        while stack:
+            current = stack.popleft()
+            yield current
+            # print DB_UTIL.traverse(current)
+            for x in DB_UTIL.traverse(current):
+                stack.append(x)
 
     @classmethod
     def traverse(cls, orm, recursive=False):
+
         def non_recursive_traverse(orm, result=None):
             if isinstance(orm, (ATOM, LINK)):
                 return chain(*[value for value in orm.items.values()])
@@ -103,7 +103,7 @@ class DB_UTIL(object):
             return result
 
         if isinstance(orm, (DATA, RAW)):
-            return None
+            return []
 
         if recursive:
             return recursive_traverse(orm)
@@ -178,11 +178,9 @@ if __name__ == '__main__':
     # print kk
     # print DB_UTIL.advanced_filter(sess(), 'tag', m_filter).all()
 
-    ss = sess()
-    aa = ss.query(ATOM).get('68e4ccc0-ce9a-11e7-ad41-0cc47a73af8f')
-    print aa
+    # data1 = sess().query(DATA).get('52c45b1c-cf39-11e7-8988-f832e47271c1')
+    # l1 = LINK(name=data1.name, parent=DB_UTIL.get_root(), target=data1)
+    # sess().commit()
 
-    h = DB_UTIL.hierarchy(aa, posix=True)
-    print h
-
-    print [x.name for x in DB_UTIL.goto('/NewATOM1/muyanru/20171121')]
+    for x in DB_UTIL.walk(DB_UTIL.get_root()):
+        print x.name

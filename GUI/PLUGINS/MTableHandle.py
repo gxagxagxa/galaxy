@@ -97,7 +97,7 @@ class MTable(object):
 
 
 class MAtom(MTable):
-    _nameRegExp = QRegExp("^([a-z0-9\-]_\.+)$")
+    _nameRegExp = QRegExp("[a-z0-9\-\._]+")
 
     @classmethod
     def canDelete(cls, orm):
@@ -109,7 +109,7 @@ class MAtom(MTable):
 
 
 class MData(MTable):
-    _nameRegExp = QRegExp("^([a-z0-9\-]_\.+)$")
+    _nameRegExp = QRegExp("[a-z0-9\-\._]+")
 
     @classmethod
     def canDelete(cls, orm):

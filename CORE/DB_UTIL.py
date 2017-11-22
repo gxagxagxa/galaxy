@@ -9,7 +9,8 @@ from itertools import chain
 
 class DB_UTIL(object):
     @classmethod
-    def refresh(cls, session, orm_or_list):
+    def refresh(cls, orm_or_list):
+        session = sess()
         if isinstance(orm_or_list, (list, tuple)):
             return [session.query(x.__class__).filter(x.__class__.sid == x.sid).one() if isinstance(x, DB_BASE) else x
                     for x in orm_or_list]
@@ -17,7 +18,7 @@ class DB_UTIL(object):
             return session.query(orm_or_list.__class__).filter(orm_or_list.__class__.sid == orm_or_list.sid).one()
 
     @classmethod
-    def hierarchy(cls, session, orm, posix=False):
+    def hierarchy(cls, orm, posix=False):
         result = [orm]
         if isinstance(orm, ATOM):
             up = orm
@@ -34,14 +35,14 @@ class DB_UTIL(object):
             return result[-2::-1]
 
     @classmethod
-    def goto(cls, session, posix_path):
-        root = DB_UTIL.get_root(session)
+    def goto(cls, posix_path):
+        root = DB_UTIL.get_root()
         result = [root]
         component = posix_path.strip('/').split('/')
 
         current = root
         for item in component:
-            current = next((x for x in DB_UTIL.traverse(session, current) if x.name == item), None)
+            current = next((x for x in DB_UTIL.traverse(current) if x.name == item), None)
             if current is None:
                 result = None
                 break
@@ -51,17 +52,18 @@ class DB_UTIL(object):
         return result
 
     @classmethod
-    def get_root(cls, session):
+    def get_root(cls):
+        session = sess()
         return session.query(ATOM).filter(ATOM.name == ROOT_ATOM_NAME).one()
 
     @classmethod
-    def file_size(cls, session, orm):
+    def file_size(cls, orm):
         def recursive_calculate(orm, result=None):
             if result is None:
                 result = []
 
             if isinstance(orm, (ATOM, LINK)):
-                for x in DB_UTIL.traverse(session, orm):
+                for x in DB_UTIL.traverse(orm):
                     # print now_dict['current'].name, x.name
                     resolve_atom = x.target if isinstance(x, LINK) else x
                     recursive_calculate(resolve_atom, result=result)
@@ -77,7 +79,7 @@ class DB_UTIL(object):
             return sum(recursive_calculate(orm))
 
     @classmethod
-    def traverse(cls, session, orm, recursive=False):
+    def traverse(cls, orm, recursive=False):
         def non_recursive_traverse(orm, result=None):
             if isinstance(orm, (ATOM, LINK)):
                 return chain(*[value for value in orm.items.values()])
@@ -109,7 +111,8 @@ class DB_UTIL(object):
             return non_recursive_traverse(orm)
 
     @classmethod
-    def advanced_filter(cls, session, model_class_name, m_filter, sql_expr=None):
+    def advanced_filter(cls, model_class_name, m_filter, sql_expr=None):
+        session = sess()
         model_class = globals()[model_class_name.upper()]
         logic_switch = {'and': and_,
                         'or' : or_}
@@ -179,7 +182,7 @@ if __name__ == '__main__':
     aa = ss.query(ATOM).get('68e4ccc0-ce9a-11e7-ad41-0cc47a73af8f')
     print aa
 
-    h = DB_UTIL.hierarchy(ss, aa, posix=True)
+    h = DB_UTIL.hierarchy(aa, posix=True)
     print h
 
-    print [x.name for x in DB_UTIL.goto(ss, '/NewATOM1/muyanru/20171121')]
+    print [x.name for x in DB_UTIL.goto('/NewATOM1/muyanru/20171121')]

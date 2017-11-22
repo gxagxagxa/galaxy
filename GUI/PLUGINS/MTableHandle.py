@@ -114,3 +114,7 @@ class MData(MTable):
     @classmethod
     def canDelete(cls, orm):
         return True
+
+    @classmethod
+    def validateExist(cls, name, parentORM, attr='name'):
+        return False

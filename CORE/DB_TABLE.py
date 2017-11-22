@@ -28,7 +28,11 @@ tag_atom_dependencies_table = Table('tag_atom_dependencies',
                                            primary_key=True))
 
 
-class ATOM(DB_BASE, HAS_BASIC, HAS_TIMESTAMP, HAS_EXTRA, HAS_THUMBNAIL):
+class HAS_LINK(object):
+    pass
+
+
+class ATOM(DB_BASE, HAS_BASIC, HAS_TIMESTAMP, HAS_EXTRA, HAS_THUMBNAIL, HAS_LINK):
     is_empty = Column(Boolean, default=True)
     tags = relationship('TAG',
                         secondary=tag_atom_dependencies_table,
@@ -62,14 +66,36 @@ class LINK(DB_BASE, HAS_BASIC, HAS_TIMESTAMP, HAS_EXTRA, HAS_THUMBNAIL):
                           primaryjoin='foreign(LINK.parent_sid) == remote(ATOM.sid)',
                           backref=backref('links', order_by='LINK.name', lazy='dynamic'))
 
+    target_table = Column(String)
     target_sid = Column(String, index=True)
-    target = relationship('ATOM',
-                          primaryjoin='foreign(LINK.target_sid) == remote(ATOM.sid)',
-                          backref=backref('sources', order_by='LINK.name', lazy='dynamic'))
+
+    # target = relationship('ATOM',
+    #                       primaryjoin='foreign(LINK.target_sid) == remote(ATOM.sid)',
+    #                       backref=backref('sources', order_by='LINK.name', lazy='dynamic'))
+
+    @property
+    def target(self):
+        return getattr(self, 'target_{}'.format(self.target_table))
 
     @property
     def items(self):
-        return self.target.items
+        return self.target.items if isinstance(self.target, ATOM) else self.target
+
+
+@listens_for(HAS_LINK, 'mapper_configured', propagate=True)
+def setup_listener(mapper, _class):
+    parent_type = _class.__name__.lower()
+    _class.sources = relationship(LINK,
+                                  primaryjoin=and_(_class.sid == foreign(remote(LINK.target_sid)),
+                                                   LINK.target_table == parent_type),
+                                  order_by=LINK.name,
+                                  backref=backref('target_{0}'.format(parent_type),
+                                                  primaryjoin=remote(_class.sid) == foreign(LINK.target_sid))
+                                  )
+
+    @listens_for(_class.sources, 'append')
+    def append_sources(target, value, initiator):
+        value.target_table = parent_type
 
 
 class TAG(DB_BASE, HAS_BASIC, HAS_EXTRA, HAS_TIMESTAMP):
@@ -109,7 +135,7 @@ raw_atom_dependencies_table = Table('raw_atom_dependencies',
                                            primary_key=True))
 
 
-class RAW(DB_BASE, HAS_BASIC, HAS_EXTRA, HAS_TIMESTAMP, HAS_CLUE, HAS_THUMBNAIL, HAS_SIZE):
+class RAW(DB_BASE, HAS_BASIC, HAS_EXTRA, HAS_TIMESTAMP, HAS_CLUE, HAS_THUMBNAIL, HAS_SIZE, HAS_LINK):
     atoms = relationship('ATOM',
                          secondary=raw_atom_dependencies_table,
                          innerjoin=True,
@@ -157,7 +183,7 @@ tag_data_dependencies_table = Table('tag_data_dependencies',
                                            primary_key=True))
 
 
-class DATA(DB_BASE, HAS_BASIC, HAS_EXTRA, HAS_TIMESTAMP, HAS_FILE, HAS_CLUE, HAS_THUMBNAIL, HAS_SIZE):
+class DATA(DB_BASE, HAS_BASIC, HAS_EXTRA, HAS_TIMESTAMP, HAS_FILE, HAS_CLUE, HAS_THUMBNAIL, HAS_SIZE, HAS_LINK):
     atoms = relationship('ATOM',
                          secondary=data_atom_dependencies_table,
                          innerjoin=True,

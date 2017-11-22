@@ -184,8 +184,8 @@ class MTableModel(QAbstractTableModel):
                         return ICON_DICT['default']
                     else:
                         keyName = getattr(dataORM, '__tablename__') if hasattr(dataORM,
-                                                                               '__tablename__') else dataORM.get(
-                            'type')
+                                                                               '__tablename__') else dataORM.get('type')
+                        if keyName == 'link': keyName = '%slink' % dataORM.target_table
                         if not ICON_DICT.has_key(keyName):
                             ICON_DICT[keyName] = QIcon('%s/icon-%s.png' % (IMAGE_PATH, keyName))
                         return ICON_DICT.get(keyName)

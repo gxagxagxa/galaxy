@@ -21,7 +21,7 @@ class MDeleteData(MPluginBase):
         parentWidget = event.get('parentWidget')
         ormList = event.get('orm')
         for orm in ormList:
-            if MAtom.canDelete(orm):
+            if MData.canDelete(orm):
                 msg = QMessageBox(parentWidget)
                 msg.setText('Are you sure?')
                 msg.setInformativeText('Delete Data: %s' % orm.name)
@@ -29,7 +29,7 @@ class MDeleteData(MPluginBase):
                 msg.setDefaultButton(QMessageBox.Yes)
                 ret = msg.exec_()
                 if ret == QMessageBox.Yes:
-                    sess().delete(orm)
+                    MData.delete(orm)
                     self.emit(SIGNAL('sigRefresh()'))
             else:
                 QMessageBox.critical(parentWidget, 'ERROR', 'This data can\'t delete')

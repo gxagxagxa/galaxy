@@ -28,7 +28,7 @@ class MDeleteLink(MPluginBase):
         ret = msg.exec_()
         if ret == QMessageBox.Yes:
             for orm in ormList:
-                sess().delete(orm)
+                MLink.delete(orm)
             self.emit(SIGNAL('sigRefresh()'))
 
     def validate(self, event):

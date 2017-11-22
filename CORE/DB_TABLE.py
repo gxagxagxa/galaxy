@@ -77,6 +77,11 @@ class LINK(DB_BASE, HAS_BASIC, HAS_TIMESTAMP, HAS_EXTRA, HAS_THUMBNAIL):
     def target(self):
         return getattr(self, 'target_{}'.format(self.target_table))
 
+    @target.setter
+    def target(self, value):
+        self.target_table = value.__tablename__
+        self.target_sid = value.sid
+
     @property
     def items(self):
         return self.target.items if isinstance(self.target, ATOM) else self.target

@@ -18,15 +18,13 @@ class MDeleteAtom(MPluginBase):
 
     def run(self, event):
         parentWidget = event.get('parentWidget')
-        orm = event.get('orm')
-        if MAtom.canDelete(orm):
-            MAtom.delete(orm)
-            self.emit(SIGNAL('sigRefresh()'))
-        else:
-            QMessageBox.critical(parentWidget, 'ERROR', 'This Atom has children. Can\'t delete')
+        ormList = event.get('orm')
+        for orm in ormList:
+            if MAtom.canDelete(orm):
+                MAtom.delete(orm)
+                self.emit(SIGNAL('sigRefresh()'))
+            else:
+                QMessageBox.critical(parentWidget, 'ERROR', 'This Atom <%s> has children. Can\'t delete' % orm.name)
 
     def validate(self, event):
-        parentWidget = event.get('parentWidget')
-        orm = event.get('orm')
-        print orm.name
         return True

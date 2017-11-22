@@ -18,7 +18,37 @@ class DB_UTIL(object):
 
     @classmethod
     def hierarchy(cls, session, orm, posix=False):
-        pass
+        result = [orm]
+        if isinstance(orm, ATOM):
+            up = orm
+            while up:
+                up = up.parent
+                if up:
+                    result.append(up)
+                else:
+                    break
+
+        if posix:
+            return '/' + '/'.join([x.name for x in result[-2::-1]])
+        else:
+            return result[-2::-1]
+
+    @classmethod
+    def goto(cls, session, posix_path):
+        root = DB_UTIL.get_root(session)
+        result = [root]
+        component = posix_path.strip('/').split('/')
+
+        current = root
+        for item in component:
+            current = next((x for x in DB_UTIL.traverse(session, current) if x.name == item), None)
+            if current is None:
+                result = None
+                break
+
+            result.append(current)
+
+        return result
 
     @classmethod
     def get_root(cls, session):
@@ -30,10 +60,10 @@ class DB_UTIL(object):
             if result is None:
                 result = []
 
-            if isinstance(orm, (ATOM, VIEW)):
+            if isinstance(orm, (ATOM, LINK)):
                 for x in DB_UTIL.traverse(session, orm):
                     # print now_dict['current'].name, x.name
-                    resolve_atom = x.target if isinstance(x, VIEW) else x
+                    resolve_atom = x.target if isinstance(x, LINK) else x
                     recursive_calculate(resolve_atom, result=result)
 
             elif isinstance(orm, (DATA, RAW)):
@@ -49,7 +79,7 @@ class DB_UTIL(object):
     @classmethod
     def traverse(cls, session, orm, recursive=False):
         def non_recursive_traverse(orm, result=None):
-            if isinstance(orm, (ATOM, VIEW)):
+            if isinstance(orm, (ATOM, LINK)):
                 return chain(*[value for value in orm.items.values()])
 
         def recursive_traverse(orm, result=None):
@@ -58,7 +88,7 @@ class DB_UTIL(object):
                           'children': []}
 
             now_dict = result
-            if isinstance(orm, (ATOM, VIEW)):
+            if isinstance(orm, (ATOM, LINK)):
                 for x in non_recursive_traverse(orm):
                     # print now_dict['current'].name, x.name
                     now_dict['children'].append({'current': x, 'children': []})
@@ -146,10 +176,10 @@ if __name__ == '__main__':
     # print DB_UTIL.advanced_filter(sess(), 'tag', m_filter).all()
 
     ss = sess()
-    root = DB_UTIL.get_root(ss)
-    # print root
-    # print DB_UTIL.traverse(ss, root, recursive=True)
-    aa = DB_UTIL.traverse(ss, root, recursive=True)
+    aa = ss.query(ATOM).get('68e4ccc0-ce9a-11e7-ad41-0cc47a73af8f')
+    print aa
 
-    print [x['current'].name for x in aa['children'][0]['children']]
-    # print x.name
+    h = DB_UTIL.hierarchy(ss, aa, posix=True)
+    print h
+
+    print [x.name for x in DB_UTIL.goto(ss, '/NewATOM1/muyanru/20171121')]

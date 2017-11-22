@@ -5,15 +5,13 @@
 # Email : muyanru345@163.com
 ###################################################################
 
-from PySide.QtCore import *
-from PySide.QtGui import *
 from functools import partial
-from GUI.WIDGETS.MToolButton import *
-from WIDGETS.MItemView import MListView
-from CORE.DB_CONNECT import *
+
 from CORE.DB_UTIL import *
 from DECO import MY_CSS
+from GUI.WIDGETS.MToolButton import *
 from IMAGES import IMAGE_PATH
+from WIDGETS.MItemView import MListView
 
 
 class MDetailWidget(QWidget):
@@ -35,7 +33,12 @@ class MDetailWidget(QWidget):
         self.setLayout(mainLay)
 
     def initData(self, orm):
-        self.pixmap.fromImage(orm.thumbnail)
+        thumbnailImage = orm.thumbnail
+        if thumbnailImage.height():
+            self.pixmap.fromImage(thumbnailImage)
+        else:
+            keyName = getattr(orm, '__tablename__')
+            self.pixmap = QPixmap('%s/icon-%s.png' % (IMAGE_PATH, keyName))
         self.imageLabel.setPixmap(self.pixmap)
         self.attrLabel.setText(str(orm))
 
@@ -95,8 +98,9 @@ class MLeftWidget(QWidget):
 class MMultiListViewWidget(QWidget):
     def __init__(self, parent=None):
         super(MMultiListViewWidget, self).__init__(parent)
-        scrollArea = QScrollArea()
-        scrollArea.setWidgetResizable(True)
+        self.scrollArea = QScrollArea()
+        self.scrollArea.setWidgetResizable(True)
+        self.connect(self.scrollArea.horizontalScrollBar(), SIGNAL('rangeChanged(int, int)'), self.slotScroll2Right)
         self.splitter = QSplitter()
         self.splitter.setOrientation(Qt.Horizontal)
         self.listViewList = []
@@ -107,27 +111,34 @@ class MMultiListViewWidget(QWidget):
         self.connect(self.rootListView, SIGNAL('sigSelectedChanged(PyObject)'), partial(self.slotCurrentChanged, self.rootListView))
         self.splitter.addWidget(self.rootListView)
         self.splitter.addWidget(self.detailWidget)
-        scrollArea.setWidget(self.splitter)
+        self.scrollArea.setWidget(self.splitter)
         mainLay = QVBoxLayout()
-        mainLay.addWidget(scrollArea)
+        mainLay.addWidget(self.scrollArea)
         self.setLayout(mainLay)
 
         self.rootListView.slotUpdate(DB_UTIL.get_root())
+
+    def slotScroll2Right(self, a, b):
+        self.scrollArea.horizontalScrollBar().setValue(b)
 
     @Slot(MListView, object)
     def slotCurrentChanged(self, parentListView, parentORMs):
         parentORM = parentORMs
         if len(parentORMs)>=1:
             parentORM = parentORMs[0]
+
+        currentIndex = self.splitter.indexOf(parentListView)
+        for i in range(self.splitter.count()):
+            if i > currentIndex:
+                self.splitter.widget(i).setVisible(isinstance(parentORM, ATOM))
+
         if isinstance(parentORM, ATOM):
             self.detailWidget.setVisible(False)
             self.addNewListView(parentListView, parentORM)
         else:
-            currentIndex = self.splitter.indexOf(parentListView)
-            for i in range(self.splitter.count()):
-                if i > currentIndex:
-                    self.splitter.setCollapsible(i, False)
-            self.splitter.addWidget(self.detailWidget)
+            self.splitter.insertWidget(currentIndex+1, self.detailWidget)
+            self.detailWidget.initData(parentORM)
+            self.detailWidget.setVisible(True)
         self.emit(SIGNAL('sigPathChanged(QString)'), DB_UTIL.hierarchy(parentORM, posix=True))
 
     def addNewListView(self, parentListView, parentORM):

@@ -32,6 +32,10 @@ class HAS_LINK(object):
     pass
 
 
+class HAS_META(object):
+    pass
+
+
 class ATOM(DB_BASE, HAS_BASIC, HAS_TIMESTAMP, HAS_EXTRA, HAS_THUMBNAIL, HAS_LINK):
     is_empty = Column(Boolean, default=True)
     tags = relationship('TAG',
@@ -94,6 +98,7 @@ def setup_listener(mapper, _class):
                                   primaryjoin=and_(_class.sid == foreign(remote(LINK.target_sid)),
                                                    LINK.target_table == parent_type),
                                   order_by=LINK.name,
+                                  lazy='dynamic',
                                   backref=backref('target_{0}'.format(parent_type),
                                                   primaryjoin=remote(_class.sid) == foreign(LINK.target_sid))
                                   )
@@ -218,14 +223,9 @@ class DATA(DB_BASE, HAS_BASIC, HAS_EXTRA, HAS_TIMESTAMP, HAS_FILE, HAS_CLUE, HAS
 
 
 class META(DB_BASE, HAS_BASIC, HAS_EXTRA, HAS_TIMESTAMP, HAS_FILE, HAS_CLUE):
-    data_sid = Column(String(50), index=True)
-    data = relationship('DATA',
-                        primaryjoin='foreign(META.data_sid) == remote(DATA.sid)',
-                        backref=backref('metas', order_by='META.name', lazy='dynamic'))
-    raw_sid = Column(String(50), index=True)
-    raw = relationship('RAW',
-                       primaryjoin='foreign(META.raw_sid) == remote(RAW.sid)',
-                       backref=backref('metas', order_by='META.name', lazy='dynamic'))
+    parent_sid = Column(String(50), index=True)
+    parent_table = Column(String)
+
     created_by_name = Column(String, index=True)
     created_by = relationship('USER',
                               primaryjoin='foreign(META.created_by_name) == remote(USER.name)',
@@ -233,6 +233,32 @@ class META(DB_BASE, HAS_BASIC, HAS_EXTRA, HAS_TIMESTAMP, HAS_FILE, HAS_CLUE):
     updated_by_name = Column(String, index=True)
     updated_by = relationship('USER',
                               primaryjoin='foreign(META.updated_by_name) == remote(USER.name)')
+
+    @property
+    def parent(self):
+        return getattr(self, 'parent_{}'.format(self.parent_table))
+
+    @parent.setter
+    def parent(self, value):
+        self.parent_type = value.__tablename__
+        self.parent_id = value.id
+
+
+@listens_for(HAS_META, 'mapper_configured', propagate=True)
+def setup_listener(mapper, _class):
+    parent_type = _class.__name__.lower()
+    _class.metas = relationship('META',
+                                primaryjoin=and_(_class.sid == foreign(remote(META.parent_sid)),
+                                                 META.parent_table == parent_type),
+                                order_by=META.name,
+                                lazy='dynamic',
+                                backref=backref('parent_{0}'.format(parent_type),
+                                                primaryjoin=remote(_class.sid) == foreign(META.parent_sid))
+                                )
+
+    @listens_for(_class.metas, 'append')
+    def append_version(target, value, initiator):
+        value.parent_table = parent_type
 
 
 class VIEW_PERMISSION(DB_BASE, HAS_BASIC):

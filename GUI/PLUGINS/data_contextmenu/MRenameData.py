@@ -35,4 +35,8 @@ class MRenameData(MPluginBase):
                     break
 
     def validate(self, event):
-        return True
+        orm = event.get('orm')
+        if len(orm) == 1:
+            return True
+        else:
+            return False

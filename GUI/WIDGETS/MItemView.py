@@ -97,6 +97,9 @@ class MListView(QListView):
         if not headerList: return
         self.realModel.setHeaders(headerList)
 
+    def minimumSizeHint(self):
+        return QSize(200, 500)
+
     def getSelectedItemsData(self):
         return [self.realModel.getORM(i) for i in self.getSelectedIndexes()]
 

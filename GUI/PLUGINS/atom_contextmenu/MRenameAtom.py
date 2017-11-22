@@ -13,7 +13,7 @@ from GUI.PLUGINS.MTableHandle import *
 
 
 class MRenameAtom(MPluginBase):
-    name = 'Rename ATOM'
+    name = 'Rename Folder'
     icon = 'icon-edit.png'
     needRefresh = True
     shortcut = Qt.Key_F2

@@ -118,3 +118,7 @@ class MData(MTable):
     @classmethod
     def validateExist(cls, name, parentORM, attr='name'):
         return False
+
+
+class MLink(MTable):
+    _nameRegExp = QRegExp("[a-z0-9\-\._]+")

@@ -38,9 +38,11 @@ class MDetailWidget(QWidget):
             self.pixmap.fromImage(thumbnailImage)
         else:
             keyName = getattr(orm, '__tablename__')
+            if keyName == 'link': keyName = '%slink' % orm.target_table
             self.pixmap = QPixmap('%s/icon-%s.png' % (IMAGE_PATH, keyName))
         self.imageLabel.setPixmap(self.pixmap)
-        self.attrLabel.setText(str(orm))
+        context = 'Data Link\n\n\n{}'.format(orm.target) if isinstance(orm, LINK) else str(orm)
+        self.attrLabel.setText(context)
 
 
 class MLeftWidget(QWidget):
@@ -132,14 +134,25 @@ class MMultiListViewWidget(QWidget):
             if i > currentIndex:
                 self.splitter.widget(i).setVisible(isinstance(parentORM, ATOM))
 
-        if isinstance(parentORM, ATOM):
-            self.detailWidget.setVisible(False)
-            self.addNewListView(parentListView, parentORM)
-        else:
-            self.splitter.insertWidget(currentIndex+1, self.detailWidget)
-            self.detailWidget.initData(parentORM)
-            self.detailWidget.setVisible(True)
+        if isinstance(parentORM, LINK):
+            if parentORM.target_table == 'atom':
+                self.handleAtom(parentListView, parentORM)
+            else:
+                self.handleData(currentIndex, parentORM)
+        elif isinstance(parentORM, ATOM):
+            self.handleAtom(parentListView, parentORM)
+        elif isinstance(parentORM, DATA):
+            self.handleData(currentIndex, parentORM)
         self.emit(SIGNAL('sigPathChanged(QString)'), DB_UTIL.hierarchy(parentORM, posix=True))
+
+    def handleAtom(self, parentListView, parentORM):
+        self.detailWidget.setVisible(False)
+        self.addNewListView(parentListView, parentORM)
+
+    def handleData(self, currentIndex, parentORM):
+        self.splitter.insertWidget(currentIndex + 1, self.detailWidget)
+        self.detailWidget.initData(parentORM)
+        self.detailWidget.setVisible(True)
 
     def addNewListView(self, parentListView, parentORM):
         newListView = parentListView.childListView
@@ -165,11 +178,8 @@ class MMultiListViewWidget(QWidget):
         if isinstance(listView, MListView):
             return listView
         else:
-            print len(self.listViewList)
             for i in range(len(self.listViewList)-1, -1, -1):
-                print i
                 tempView = self.listViewList[i]
-                print tempView.getAllItemsData()
                 if tempView.getAllItemsData():
                     return tempView
         return None

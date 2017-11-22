@@ -35,10 +35,10 @@ class MPasteAtom(MPluginBase):
                     continue
 
                 start = 1
-                new_name += '_{:4d}'.format(start)
+                new_name += '_{:04d}'.format(start)
                 while new_name in existing_name:
                     start += 1
-                    new_name = x.name + '_{:4d}'.format(start)
+                    new_name = x.name + '_{:04d}'.format(start)
 
             if operator == 'link':
                 if isinstance(x, ATOM):

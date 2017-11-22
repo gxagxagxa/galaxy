@@ -40,7 +40,7 @@ class MPasteAtom(MPluginBase):
                     start += 1
                     new_name = x.name + '_{:4d}'.format(start)
 
-            if operator == 'link':
+            if operator == 'copy':
                 if isinstance(x, ATOM):
                     sym_link = LINK(name=new_name, parent=currentORM, target=x)
                 elif isinstance(x, LINK):
@@ -57,8 +57,7 @@ class MPasteAtom(MPluginBase):
                 x.name = new_name
                 x.label = new_name
                 sess().commit()
-
-        # print operator, currentORM.name, ormList.name
+        self.emit(SIGNAL('sigRefresh()'))
 
     def validate(self, event):
         clipBoard = QApplication.clipboard()

@@ -20,7 +20,7 @@ class MRenameAtom(MPluginBase):
 
     def run(self, event):
         parentWidget = event.get('parentWidget')
-        orm = event.get('orm')
+        orm = event.get('orm')[0]
         result = True
         name = orm.name
         while result:
@@ -35,4 +35,8 @@ class MRenameAtom(MPluginBase):
                     break
 
     def validate(self, event):
-        return True
+        orm = event.get('orm')
+        if len(orm) == 1:
+            return True
+        else:
+            return False

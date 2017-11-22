@@ -13,6 +13,7 @@ from GUI.PLUGINS.MTableHandle import *
 from MItemModel import MTableModel
 from CORE.DB_UTIL import *
 
+
 class MHeaderView(QHeaderView):
     def __init__(self, orientation, parent=None):
         super(MHeaderView, self).__init__(orientation, parent)
@@ -72,6 +73,117 @@ class MHeaderView(QHeaderView):
             QHeaderView.setResizeMode(self, mode)
         except:
             QHeaderView.setSectionResizeMode(self, mode)
+
+
+class MTableView(QTableView):
+    def __init__(self, parent=None):
+        super(MTableView, self).__init__(parent)
+        self.parentORM = None
+        self.realModel = MTableModel()
+        headerList = [
+            {'attr': 'name', 'name': 'Name'}
+        ]
+        self.headerList = headerList
+        self.setHeaderList(headerList)
+        self.childListView = None
+        self.parentListView = None
+        self.sortFilterModel = QSortFilterProxyModel()
+        self.sortFilterModel.setSourceModel(self.realModel)
+        self.setModel(self.sortFilterModel)
+        self.setMenu()
+        self.setSigSlot()
+
+    def setHeaderList(self, headerList):
+        if not headerList: return
+        self.realModel.setHeaders(headerList)
+
+    def _getORMList(self, parentORM):
+        return DB_UTIL.traverse(parentORM)
+
+    def _filterORMList(self, ormList):
+        return ormList
+
+    @Slot(object)
+    def slotUpdate(self, parentORM=None):
+        self.parentORM = parentORM
+        self.emit(SIGNAL('sigUpdateData(PyObject)'), parentORM)
+        ormList = self._getORMList(parentORM)
+        if ormList:
+            resultList = self._filterORMList(list(ormList))
+            self.realModel.setDataList(resultList)
+        else:
+            self.clear()
+
+    @Slot(QModelIndex, QModelIndex)
+    def slotCurrentItemChanged(self, currentIndex, before):
+        self.emit(SIGNAL('sigCurrentChanged(PyObject)'), self.getCurrentItemData())
+
+    @Slot(QItemSelection, QItemSelection)
+    def slotSelectedItemChanged(self, currentSelected, before):
+        self.emit(SIGNAL('sigSelectedChanged(PyObject)'), self.getSelectedItemsData())
+
+    @Slot(QModelIndex)
+    def slotDoubleClicked(self, index):
+        realIndex = self.sortFilterModel.mapToSource(index)
+        self.emit(SIGNAL('sigDoubleClicked(PyObject)'), self.realModel.getORM(realIndex))
+
+    def getCurrentIndex(self):
+        return self.sortFilterModel.mapToSource(self.currentIndex())
+
+    def getSelectedIndexes(self):
+        return [self.sortFilterModel.mapToSource(i) for i in self.selectedIndexes()]
+
+    def getCurrentItemData(self):
+        return self.realModel.getORM(self.getCurrentIndex())
+
+    def clear(self):
+        self.realModel.setDataList([])
+
+    def getAllItemsData(self):
+        return self.realModel.dataList[:]
+
+    def setMenu(self):
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.connect(self, SIGNAL('customContextMenuRequested(const QPoint&)'),
+                     self.slotContextMenu)
+
+    def setSigSlot(self):
+        self.connect(self.selectionModel(), SIGNAL('currentChanged(QModelIndex, QModelIndex)'),
+                     self.slotCurrentItemChanged)
+        self.connect(self.selectionModel(), SIGNAL('selectionChanged(QItemSelection, QItemSelection)'),
+                     self.slotSelectedItemChanged)
+        self.connect(self, SIGNAL('doubleClicked(QModelIndex)'), self.slotDoubleClicked)
+
+    @Slot(QPoint)
+    def slotContextMenu(self, point):
+        cur = QCursor.pos()
+        proxyIndex = self.indexAt(point)
+        contextMenu = QMenu(self)
+        if proxyIndex.isValid():
+            realIndex = self.sortFilterModel.mapToSource(proxyIndex)
+            dataORM = self.realModel.getORM(realIndex)
+            event = '{table}_contextmenu'.format(table=getattr(dataORM, '__tablename__', None))
+            for plugin in MPluginManager.loadPlugins(self, event):
+                if plugin.validate({'orm': dataORM}):
+                    action = contextMenu.addAction(QIcon(IMAGE_PATH + '/' + plugin.icon), plugin.name)
+                    self.connect(action, SIGNAL('triggered()'),
+                                 partial(plugin.run, {'parentWidget': self, 'orm': dataORM}))
+                    if plugin.shortcut is not None:
+                        action.setShortcut(QKeySequence(plugin.shortcut))
+                    if plugin.needRefresh:
+                        self.connect(plugin, SIGNAL('sigRefresh()'), partial(self.slotUpdate, self.parentORM))
+        else:
+            event = '{table}_empty_contextmenu'.format(table=getattr(self.parentORM, '__tablename__', None))
+            for plugin in MPluginManager.loadPlugins(self, event):
+                if plugin.validate({'orm': self.parentORM}):
+                    action = contextMenu.addAction(QIcon(IMAGE_PATH + '/' + plugin.icon), plugin.name)
+                    self.connect(action, SIGNAL('triggered()'),
+                                 partial(plugin.run, {'parentWidget': self, 'orm': self.parentORM}))
+                    if plugin.shortcut is not None:
+                        action.setShortcut(QKeySequence(plugin.shortcut))
+                    if plugin.needRefresh:
+                        self.connect(plugin, SIGNAL('sigRefresh()'), partial(self.slotUpdate, self.parentORM))
+        contextMenu.exec_(cur)
 
 
 class MListView(QListView):

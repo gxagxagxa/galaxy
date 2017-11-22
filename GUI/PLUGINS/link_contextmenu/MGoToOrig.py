@@ -23,8 +23,7 @@ class MGoToOrig(MPluginBase):
         if targetORM is None:
             QMessageBox.information(parentWidget, 'Warning', 'This Link\'s original object has been deleted.')
         else:
-            #TODO: go to target object
-            print targetORM
+            parentWidget.emit(SIGNAL('sigGoTo(object)'), targetORM)
 
     def validate(self, event):
         orm = event.get('orm')

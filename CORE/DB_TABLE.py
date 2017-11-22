@@ -77,9 +77,14 @@ class LINK(DB_BASE, HAS_BASIC, HAS_TIMESTAMP, HAS_EXTRA, HAS_THUMBNAIL):
     def target(self):
         return getattr(self, 'target_{}'.format(self.target_table))
 
+    @target.setter
+    def target(self, value):
+        self.target_table = value.__tablename__
+        self.target_sid = value.sid
+
     @property
     def items(self):
-        return self.target.items if isinstance(self.target, ATOM) else self.target
+        return self.target.items if isinstance(self.target, ATOM) else {'child': [self.target]}
 
 
 @listens_for(HAS_LINK, 'mapper_configured', propagate=True)
@@ -125,23 +130,12 @@ tag_raw_dependencies_table = Table('tag_raw_dependencies',
                                           ForeignKey('raw.sid'),
                                           primary_key=True))
 
-raw_atom_dependencies_table = Table('raw_atom_dependencies',
-                                    DB_BASE.metadata,
-                                    Column('atom_sid', String(50),
-                                           ForeignKey('atom.sid'),
-                                           primary_key=True),
-                                    Column('raw_sid', String(50),
-                                           ForeignKey('raw.sid'),
-                                           primary_key=True))
-
 
 class RAW(DB_BASE, HAS_BASIC, HAS_EXTRA, HAS_TIMESTAMP, HAS_CLUE, HAS_THUMBNAIL, HAS_SIZE, HAS_LINK):
-    atoms = relationship('ATOM',
-                         secondary=raw_atom_dependencies_table,
-                         innerjoin=True,
-                         lazy='dynamic',
-                         order_by='ATOM.name',
-                         backref=backref('raws', order_by='RAW.name', innerjoin=True, lazy='dynamic'))
+    parent_sid = Column(String(50), index=True)
+    parent = relationship('ATOM',
+                          primaryjoin='foreign(RAW.parent_sid) == remote(ATOM.sid)',
+                          backref=backref('raws', order_by='RAW.name', lazy='dynamic'))
     name = Column(String, index=True)
     reel = Column(String)
     in_tc = Column(String)
@@ -164,15 +158,6 @@ class RAW(DB_BASE, HAS_BASIC, HAS_EXTRA, HAS_TIMESTAMP, HAS_CLUE, HAS_THUMBNAIL,
                               primaryjoin='foreign(RAW.updated_by_name) == remote(USER.name)')
 
 
-data_atom_dependencies_table = Table('data_atom_dependencies',
-                                     DB_BASE.metadata,
-                                     Column('atom_sid', String(50),
-                                            ForeignKey('atom.sid'),
-                                            primary_key=True),
-                                     Column('data_sid', String(50),
-                                            ForeignKey('data.sid'),
-                                            primary_key=True))
-
 tag_data_dependencies_table = Table('tag_data_dependencies',
                                     DB_BASE.metadata,
                                     Column('tag_sid', String(50),
@@ -184,12 +169,10 @@ tag_data_dependencies_table = Table('tag_data_dependencies',
 
 
 class DATA(DB_BASE, HAS_BASIC, HAS_EXTRA, HAS_TIMESTAMP, HAS_FILE, HAS_CLUE, HAS_THUMBNAIL, HAS_SIZE, HAS_LINK):
-    atoms = relationship('ATOM',
-                         secondary=data_atom_dependencies_table,
-                         innerjoin=True,
-                         lazy='dynamic',
-                         order_by='ATOM.name',
-                         backref=backref('datas', order_by='DATA.name', innerjoin=True, lazy='dynamic'))
+    parent_sid = Column(String(50), index=True)
+    parent = relationship('ATOM',
+                          primaryjoin='foreign(DATA.parent_sid) == remote(ATOM.sid)',
+                          backref=backref('datas', order_by='DATA.name', lazy='dynamic'))
 
     tags = relationship('TAG',
                         secondary=tag_data_dependencies_table,

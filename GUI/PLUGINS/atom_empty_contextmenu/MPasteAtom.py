@@ -9,6 +9,8 @@
 from GUI.PLUGINS.MPluginBase import MPluginBase
 from GUI.PLUGINS.MTableHandle import *
 import GUI.PLUGINS.MMimeData as mmd
+from CORE.DB_UTIL import *
+
 
 class MPasteAtom(MPluginBase):
     name = 'Paste Folder'
@@ -22,9 +24,42 @@ class MPasteAtom(MPluginBase):
         clipBoard = QApplication.clipboard()
         mimeData = clipBoard.mimeData()
         operator, ormList = mmd.unpackMimeData(mimeData)
-        # TODO: operator is copy, create link
+
+        existing_name = [x.name for x in DB_UTIL.traverse(currentORM)]
+        for x in ormList:
+            new_name = x.name
+            if new_name in existing_name:
+                if False:
+                    # user will skip same name file or atom
+                    continue
+
+                start = 1
+                new_name += '_{:4d}'.format(start)
+                while new_name in existing_name:
+                    start += 1
+                    new_name = x.name + '_{:4d}'.format(start)
+
+            if operator == 'link':
+                if isinstance(x, ATOM):
+                    sym_link = LINK(name=new_name, parent=currentORM, target=x)
+                    existing_name.append(new_name)
+                    sess().commit()
+                elif isinstance(x, LINK):
+                    sym_link = LINK(name=new_name, parent=currentORM.target, target=x)
+                    existing_name.append(new_name)
+                    sess().commit()
+                elif isinstance(x, (DATA, RAW)):
+                    sym_link = LINK(name=new_name, parent=currentORM, target=x)
+                    existing_name.append(new_name)
+                    sess().commit()
+
+            elif operator == 'move':
+                x.parent = currentORM
+                x.name = new_name
+                x.label = new_name
+                sess().commit()
+
         print operator, currentORM.name, ormList.name
-        # TODO: operator is move, change parent
 
     def validate(self, event):
         clipBoard = QApplication.clipboard()

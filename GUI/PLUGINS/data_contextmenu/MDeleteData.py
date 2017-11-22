@@ -19,22 +19,20 @@ class MDeleteData(MPluginBase):
 
     def run(self, event):
         parentWidget = event.get('parentWidget')
-        orm = event.get('orm')
-        if MAtom.canDelete(orm):
-            msg = QMessageBox(parentWidget)
-            msg.setText('Are you sure?')
-            msg.setInformativeText('Delete Data: %s' % orm.name)
-            msg.setStandardButtons(QMessageBox.Yes | QMessageBox.Cancel)
-            msg.setDefaultButton(QMessageBox.Yes)
-            ret = msg.exec_()
-            if ret == QMessageBox.Yes:
-                # TODO: delete data orm
-                self.emit(SIGNAL('sigRefresh()'))
-        else:
-            QMessageBox.critical(parentWidget, 'ERROR', 'This data can\'t delete')
+        ormList = event.get('orm')
+        for orm in ormList:
+            if MAtom.canDelete(orm):
+                msg = QMessageBox(parentWidget)
+                msg.setText('Are you sure?')
+                msg.setInformativeText('Delete Data: %s' % orm.name)
+                msg.setStandardButtons(QMessageBox.Yes | QMessageBox.Cancel)
+                msg.setDefaultButton(QMessageBox.Yes)
+                ret = msg.exec_()
+                if ret == QMessageBox.Yes:
+                    sess().delete(orm)
+                    self.emit(SIGNAL('sigRefresh()'))
+            else:
+                QMessageBox.critical(parentWidget, 'ERROR', 'This data can\'t delete')
 
     def validate(self, event):
-        parentWidget = event.get('parentWidget')
-        orm = event.get('orm')
-        print orm.name
         return True

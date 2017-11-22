@@ -7,7 +7,6 @@
 ###################################################################
 
 from GUI.PLUGINS.MPluginBase import MPluginBase
-from GUI.QT import *
 from GUI.PLUGINS.MTableHandle import *
 
 class MDeleteAtom(MPluginBase):

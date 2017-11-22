@@ -25,6 +25,7 @@ class MPasteAtom(MPluginBase):
         mimeData = clipBoard.mimeData()
         operator, ormList = mmd.unpackMimeData(mimeData)
 
+        ormList = ormList if isinstance(ormList, (list, tuple)) else (ormList, )
         existing_name = [x.name for x in DB_UTIL.traverse(currentORM)]
         for x in ormList:
             new_name = x.name
@@ -42,16 +43,14 @@ class MPasteAtom(MPluginBase):
             if operator == 'link':
                 if isinstance(x, ATOM):
                     sym_link = LINK(name=new_name, parent=currentORM, target=x)
-                    existing_name.append(new_name)
-                    sess().commit()
                 elif isinstance(x, LINK):
                     sym_link = LINK(name=new_name, parent=currentORM.target, target=x)
-                    existing_name.append(new_name)
-                    sess().commit()
                 elif isinstance(x, (DATA, RAW)):
                     sym_link = LINK(name=new_name, parent=currentORM, target=x)
-                    existing_name.append(new_name)
-                    sess().commit()
+
+                sess().add(sym_link)
+                existing_name.append(new_name)
+                sess().commit()
 
             elif operator == 'move':
                 x.parent = currentORM
@@ -59,7 +58,7 @@ class MPasteAtom(MPluginBase):
                 x.label = new_name
                 sess().commit()
 
-        print operator, currentORM.name, ormList.name
+        # print operator, currentORM.name, ormList.name
 
     def validate(self, event):
         clipBoard = QApplication.clipboard()

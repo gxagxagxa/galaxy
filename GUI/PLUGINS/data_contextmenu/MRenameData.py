@@ -29,7 +29,6 @@ class MRenameData(MPluginBase):
                     QMessageBox.critical(parentWidget, 'ERROR', 'This name exists.')
                     continue
                 else:
-                    # TODO: rename data?
                     MData.update(orm, name=name)
                     self.emit(SIGNAL('sigRefresh()'))
                     break

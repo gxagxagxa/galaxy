@@ -58,12 +58,12 @@ class DB_UTIL(object):
 
     @classmethod
     def file_size(cls, orm):
-        total = 0
+        result = set()
         for x in DB_UTIL.walk(orm):
             if isinstance(x, (DATA, RAW)):
-                total += x.file_size
+                result.add((x.sid, x.file_size))
 
-        return total
+        return sum((x[1] for x in result))
 
     @classmethod
     def walk(cls, orm):
@@ -184,4 +184,4 @@ if __name__ == '__main__':
     # for x in  DB_UTIL.traverse(data1):
     #     print x
 
-    print list(DB_UTIL.traverse(data1))
+    print DB_UTIL.file_size(DB_UTIL.get_root())

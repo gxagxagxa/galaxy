@@ -7,8 +7,7 @@ from DB_BASE import *
 
 
 # todo: data need size, atom
-# todo: data hash, not first but later?
-# todo: atom is empty or not
+
 
 
 class USER(DB_BASE, HAS_BASIC, HAS_TIMESTAMP, HAS_EXTRA, HAS_THUMBNAIL):
@@ -67,6 +66,10 @@ class LINK(DB_BASE, HAS_BASIC, HAS_TIMESTAMP, HAS_EXTRA, HAS_THUMBNAIL):
     target = relationship('ATOM',
                           primaryjoin='foreign(LINK.target_sid) == remote(ATOM.sid)',
                           backref=backref('sources', order_by='LINK.name', lazy='dynamic'))
+
+    @property
+    def items(self):
+        return self.target.items
 
 
 class TAG(DB_BASE, HAS_BASIC, HAS_EXTRA, HAS_TIMESTAMP):

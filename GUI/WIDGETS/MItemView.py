@@ -11,7 +11,7 @@ from GUI.IMAGES import IMAGE_PATH
 from GUI.PLUGINS import MPluginManager
 from GUI.PLUGINS.MTableHandle import *
 from MItemModel import MTableModel
-
+from CORE.DB_UTIL import *
 
 class MHeaderView(QHeaderView):
     def __init__(self, orientation, parent=None):
@@ -85,6 +85,7 @@ class MListView(QListView):
         self.headerList = headerList
         self.setHeaderList(headerList)
         self.childListView = None
+        self.parentListView = None
         self.sortFilterModel = QSortFilterProxyModel()
         self.sortFilterModel.setSourceModel(self.realModel)
         self.setModel(self.sortFilterModel)
@@ -101,6 +102,9 @@ class MListView(QListView):
 
     def setChildListView(self, widget):
         self.childListView = widget
+
+    def setParentListView(self, widget):
+        self.parentListView = widget
 
     @Slot(QPoint)
     def slotContextMenu(self, point):
@@ -134,7 +138,7 @@ class MListView(QListView):
         contextMenu.exec_(cur)
 
     def _getORMList(self, parentORM):
-        return parentORM.sub_atoms.all()
+        return DB_UTIL.traverse(parentORM)
 
     def _filterORMList(self, ormList):
         return ormList
@@ -145,7 +149,7 @@ class MListView(QListView):
         self.emit(SIGNAL('sigUpdateData(PyObject)'), parentORM)
         ormList = self._getORMList(parentORM)
         if ormList:
-            resultList = self._filterORMList(ormList)
+            resultList = self._filterORMList(list(ormList))
             self.realModel.setDataList(resultList)
         else:
             self.clear()

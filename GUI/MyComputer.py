@@ -104,7 +104,7 @@ class MMultiListViewWidget(QWidget):
         self.detailWidget = MDetailWidget()
         self.detailWidget.setVisible(False)
 
-        self.connect(self.rootListView, SIGNAL('sigSelectedChanged(PyObject)'), self.slotCurrentChanged)
+        self.connect(self.rootListView, SIGNAL('sigSelectedChanged(PyObject)'), partial(self.slotCurrentChanged, self.rootListView))
         self.splitter.addWidget(self.rootListView)
         self.splitter.addWidget(self.detailWidget)
         scrollArea.setWidget(self.splitter)
@@ -112,11 +112,10 @@ class MMultiListViewWidget(QWidget):
         mainLay.addWidget(scrollArea)
         self.setLayout(mainLay)
 
-        self.rootListView.slotUpdate(DB_UTIL.get_root(sess()))
+        self.rootListView.slotUpdate(DB_UTIL.get_root())
 
-    @Slot(object)
-    def slotCurrentChanged(self, parentORMs):
-        parentListView = self.sender()
+    @Slot(MListView, object)
+    def slotCurrentChanged(self, parentListView, parentORMs):
         parentORM = parentORMs
         if len(parentORMs)>=1:
             parentORM = parentORMs[0]
@@ -129,15 +128,15 @@ class MMultiListViewWidget(QWidget):
                 if i > currentIndex:
                     self.splitter.setCollapsible(i, False)
             self.splitter.addWidget(self.detailWidget)
-        self.emit(SIGNAL('sigPathChanged(QString)'), DB_UTIL.hierarchy(sess(), parentORM))
+        self.emit(SIGNAL('sigPathChanged(QString)'), DB_UTIL.hierarchy(parentORM, posix=True))
 
     def addNewListView(self, parentListView, parentORM):
-        if parentListView is None: return
         newListView = parentListView.childListView
         if not newListView:
             newListView = MListView()
-            self.connect(newListView, SIGNAL('sigSelectedChanged(PyObject)'), self.slotCurrentChanged)
+            self.connect(newListView, SIGNAL('sigSelectedChanged(PyObject)'), partial(self.slotCurrentChanged, newListView))
             parentListView.setChildListView(newListView)
+            newListView.setParentListView(parentListView)
             self.listViewList.append(newListView)
             self.splitter.addWidget(newListView)
         else:
@@ -150,9 +149,26 @@ class MMultiListViewWidget(QWidget):
             child.clear()
             self.clearDownstreamListView(child)
 
-
     def currentListView(self):
+        listView = QApplication.focusWidget()
+        if isinstance(listView, MListView):
+            return listView
+        else:
+            print len(self.listViewList)
+            for i in range(len(self.listViewList)-1, -1, -1):
+                print i
+                tempView = self.listViewList[i]
+                print tempView.getAllItemsData()
+                if tempView.getAllItemsData():
+                    return tempView
         return None
+        # for i in range(self.splitter.count()):
+        #     listView = self.splitter.widget(i)
+        #     if listView.hasFocus():
+        #         if listView.getAllItemsData():
+        #             return listView
+        #         else:
+        #             return listView.parentListView
 
 
 class MBigPictureViewWidget(QWidget):
@@ -173,6 +189,8 @@ class MBigPictureViewWidget(QWidget):
         mainLay.addWidget(self.listView)
         self.setLayout(mainLay)
 
+    def currentListView(self):
+        return self.listView
 
 # class MTableViewWidget(QWidget):
 #     def __init__(self, parent=None):
@@ -281,7 +299,7 @@ class MFinder(QMainWindow):
         self.viewModeGrp.addButton(self.multiViewButton, MFinder.MULTI_VIEW)
         self.viewModeGrp.addButton(self.bigPictureButton, MFinder.BIG_PICTURE_VIEW)
         self.viewModeGrp.addButton(self.tableViewButton, MFinder.TABLE_VIEW)
-        self.connect(self.viewModeGrp, SIGNAL('buttonClicked(int)'), self.stackWidget.setCurrentIndex)
+        self.connect(self.viewModeGrp, SIGNAL('buttonClicked(int)'), self.slotSwitchViewMode)
         self.multiViewButton.setChecked(True)
 
         self.searchLineEdit = QLineEdit()
@@ -297,6 +315,12 @@ class MFinder(QMainWindow):
     def slotClipboardDataChanged(self):
         md = QApplication.clipboard().mimeData()
         print md
+
+    def slotSwitchViewMode(self, index):
+        currentView = self.stackWidget.currentWidget().currentListView()
+        self.stackWidget.setCurrentIndex(index)
+        # if index
+
 
     @Slot(int)
     def slotCurrentModeChanged(self, index):

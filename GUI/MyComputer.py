@@ -112,7 +112,7 @@ class MMultiListViewWidget(QWidget):
         mainLay.addWidget(scrollArea)
         self.setLayout(mainLay)
 
-        self.rootListView.slotUpdate(DB_UTIL.get_root(sess()))
+        self.rootListView.slotUpdate(DB_UTIL.get_root())
 
     @Slot(MListView, object)
     def slotCurrentChanged(self, parentListView, parentORMs):
@@ -128,7 +128,7 @@ class MMultiListViewWidget(QWidget):
                 if i > currentIndex:
                     self.splitter.setCollapsible(i, False)
             self.splitter.addWidget(self.detailWidget)
-        self.emit(SIGNAL('sigPathChanged(QString)'), DB_UTIL.hierarchy(sess(), parentORM, posix=True))
+        self.emit(SIGNAL('sigPathChanged(QString)'), DB_UTIL.hierarchy(parentORM, posix=True))
 
     def addNewListView(self, parentListView, parentORM):
         newListView = parentListView.childListView

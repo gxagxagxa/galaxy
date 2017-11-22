@@ -138,7 +138,7 @@ class MListView(QListView):
         contextMenu.exec_(cur)
 
     def _getORMList(self, parentORM):
-        return DB_UTIL.traverse(sess(), parentORM)
+        return DB_UTIL.traverse(parentORM)
 
     def _filterORMList(self, ormList):
         return ormList

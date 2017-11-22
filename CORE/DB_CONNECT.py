@@ -12,7 +12,7 @@ class DB_CONNECT(object):
                  # connection='sqlite:////Users/andyguo/Desktop/ssg.db',
                  connection='postgresql+psycopg2://postgres:More@TD_2017@core_db.more.com:5432/postgres',
                  echo=False,
-                 isolation_level='SERIALIZABLE'):
+                 isolation_level='READ COMMITTED'):
         self.connection = connection
         self.engine = create_engine(self.connection, echo=echo, isolation_level=isolation_level)
         self.smaker = sessionmaker(bind=self.engine)
@@ -75,17 +75,17 @@ if __name__ == '__main__':
     #
     # sess().commit()
 
-    # u1 = USER(name='guoxiaoao')
-    # u2 = USER(name='test')
-    #
-    # sess().add_all([u1, u2])
-    # a1 = ATOM(name='aa')
-    # d1 = DATA(name='111', thumbnail=QImage('/Users/guoxiaoao/Desktop/Screen Shot 2017-11-16 at 17.27.56.png'))
-    # a1.datas.append(d1)
-    # a1.datas.append(d1)
-    # sess().add(a1)
-    #
-    # sess().commit()
+    u1 = USER(name='guoxiaoao')
+    u2 = USER(name='test')
+
+    sess().add_all([u1, u2])
+    a1 = ATOM(name='aa')
+    d1 = DATA(name='111', thumbnail=QImage('/Users/guoxiaoao/Desktop/Screen Shot 2017-11-16 at 17.27.56.png'))
+    a1.datas.append(d1)
+    a1.datas.append(d1)
+    sess().add(a1)
+
+    sess().commit()
     #
     # dd = sess().query(DATA).first()
     # print dd

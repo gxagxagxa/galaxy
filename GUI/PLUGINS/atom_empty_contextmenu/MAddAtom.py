@@ -13,7 +13,7 @@ from GUI.PLUGINS.MTableHandle import *
 
 
 class MAddAtom(MPluginBase):
-    name = 'New ATOM'
+    name = 'New Folder'
     icon = 'icon-add.png'
     needRefresh = True
 

@@ -12,7 +12,7 @@ from GUI.PLUGINS.MTableHandle import *
 
 
 class MMoveAtom(MPluginBase):
-    name = 'Cut ATOM'
+    name = 'Cut Folder'
     icon = 'icon-edit.png'
     needRefresh = True
     shortcut = QKeySequence.Cut

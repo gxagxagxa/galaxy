@@ -11,7 +11,7 @@ from GUI.QT import *
 from GUI.PLUGINS.MTableHandle import *
 
 class MDeleteAtom(MPluginBase):
-    name = 'Delete ATOM'
+    name = 'Delete Folder'
     icon = 'icon-trash.png'
     needRefresh = True
     shortcut = QKeySequence.Delete

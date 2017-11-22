@@ -12,7 +12,7 @@ from GUI.PLUGINS.MTableHandle import *
 
 
 class MCopyAtom(MPluginBase):
-    name = 'Copy ATOM'
+    name = 'Copy Folder'
     icon = 'icon-edit.png'
     needRefresh = True
     shortcut = QKeySequence.Copy

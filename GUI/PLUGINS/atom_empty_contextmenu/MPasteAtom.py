@@ -11,7 +11,7 @@ from GUI.PLUGINS.MTableHandle import *
 import GUI.PLUGINS.MMimeData as mmd
 
 class MPasteAtom(MPluginBase):
-    name = 'Paste ATOM'
+    name = 'Paste Folder'
     icon = 'icon-edit.png'
     needRefresh = True
     shortcut = QKeySequence.Paste

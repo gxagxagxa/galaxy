@@ -21,14 +21,13 @@ class DB_UTIL(object):
     @classmethod
     def hierarchy(cls, orm, posix=False):
         result = [orm]
-        if isinstance(orm, ATOM):
-            up = orm
-            while up:
-                up = up.parent
-                if up:
-                    result.append(up)
-                else:
-                    break
+        up = orm
+        while up:
+            up = up.parent
+            if up:
+                result.append(up)
+            else:
+                break
 
         if posix:
             return '/' + '/'.join([x.name for x in result[-2::-1]])
@@ -79,10 +78,11 @@ class DB_UTIL(object):
 
     @classmethod
     def traverse(cls, orm, recursive=False):
-
         def non_recursive_traverse(orm, result=None):
             if isinstance(orm, (ATOM, LINK)):
                 return chain(*[value for value in orm.items.values()])
+            elif isinstance(orm, (DATA, RAW)):
+                return []
 
         def recursive_traverse(orm, result=None):
             if result is None:
@@ -101,9 +101,6 @@ class DB_UTIL(object):
                 now_dict['children'].append({'current': orm, 'children': []})
 
             return result
-
-        if isinstance(orm, (DATA, RAW)):
-            return []
 
         if recursive:
             return recursive_traverse(orm)
@@ -178,9 +175,13 @@ if __name__ == '__main__':
     # print kk
     # print DB_UTIL.advanced_filter(sess(), 'tag', m_filter).all()
 
-    # data1 = sess().query(DATA).get('52c45b1c-cf39-11e7-8988-f832e47271c1')
+    data1 = sess().query(LINK).get('580d258f-cf54-11e7-a624-f832e47271c1')
+    # d1 = DATA(name='ppp', parent=data1)
+
     # l1 = LINK(name=data1.name, parent=DB_UTIL.get_root(), target=data1)
     # sess().commit()
 
-    for x in DB_UTIL.walk(DB_UTIL.get_root()):
-        print x.name
+    # for x in  DB_UTIL.traverse(data1):
+    #     print x
+
+    print list(DB_UTIL.traverse(data1))

@@ -10,7 +10,7 @@ from GUI.PLUGINS.MPluginBase import MPluginBase
 from GUI.PLUGINS.MTableHandle import *
 import GUI.PLUGINS.MMimeData as mmd
 from CORE.DB_UTIL import *
-
+from GUI.WIDGETS.MReplaceOrSkipDialog import MReplaceOrSkipDialog
 
 class MPasteAtom(MPluginBase):
     name = 'Paste Folder'
@@ -27,18 +27,22 @@ class MPasteAtom(MPluginBase):
 
         ormList = ormList if isinstance(ormList, (list, tuple)) else (ormList, )
         existing_name = [x.name for x in DB_UTIL.traverse(currentORM)]
+        handleSameName = None
         for x in ormList:
             new_name = x.name
             if new_name in existing_name:
-                if False:
-                    # user will skip same name file or atom
+                if handleSameName is None:
+                    dialog = MReplaceOrSkipDialog(parentWidget)
+                    dialog.exec_()
+                    handleSameName = dialog.getResult()
+                if handleSameName == MReplaceOrSkipDialog.Skip:
                     continue
-
-                start = 1
-                new_name += '_{:4d}'.format(start)
-                while new_name in existing_name:
-                    start += 1
-                    new_name = x.name + '_{:4d}'.format(start)
+                elif handleSameName == MReplaceOrSkipDialog.Rename:
+                    start = 1
+                    new_name += '_{:4d}'.format(start)
+                    while new_name in existing_name:
+                        start += 1
+                        new_name = x.name + '_{:4d}'.format(start)
 
             if operator == 'copy':
                 if isinstance(x, ATOM):

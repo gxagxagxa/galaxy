@@ -17,9 +17,18 @@ class MGoToOrig(MPluginBase):
     shortcut = QKeySequence.Copy
 
     def run(self, event):
-        orm = event.get('orm')
+        orm = event.get('orm')[0]
+        parentWidget = event.get('parentWidget')
         targetORM = orm.target
-        print targetORM
+        if targetORM is None:
+            QMessageBox.information(parentWidget, 'Warning', 'This Link\'s original object has been deleted.')
+        else:
+            #TODO: go to target object
+            print targetORM
 
     def validate(self, event):
-        return True
+        orm = event.get('orm')
+        if len(orm) == 1:
+            return True
+        else:
+            return False

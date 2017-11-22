@@ -94,7 +94,7 @@ class DB_UTIL(object):
                 for x in non_recursive_traverse(orm):
                     # print now_dict['current'].name, x.name
                     now_dict['children'].append({'current': x, 'children': []})
-                    resolve_atom = x.target if isinstance(x, VIEW) else x
+                    resolve_atom = x.target if isinstance(x, LINK) else x
                     recursive_traverse(resolve_atom, result=now_dict['children'][-1])
 
             elif isinstance(orm, (DATA, RAW)):

@@ -84,7 +84,7 @@ class LINK(DB_BASE, HAS_BASIC, HAS_TIMESTAMP, HAS_EXTRA, HAS_THUMBNAIL):
 
     @property
     def items(self):
-        return self.target.items if isinstance(self.target, ATOM) else self.target
+        return self.target.items if isinstance(self.target, ATOM) else [self.target]
 
 
 @listens_for(HAS_LINK, 'mapper_configured', propagate=True)

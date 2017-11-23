@@ -111,6 +111,14 @@ class HAS_SIZE(object):
         return deferred(Column(String, default=''))
 
 
+class HAS_TC(object):
+    reel = Column(String, default='')
+    in_tc = Column(String, default='')
+    out_tc = Column(String, default='')
+    project_fps = Column(Float, default=24.0)
+    fps = Column(Float, default=24.0)
+
+
 class HAS_THUMBNAIL(object):
     @declared_attr
     def thumbnail_base64(cls):

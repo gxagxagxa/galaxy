@@ -118,8 +118,11 @@ class HAS_THUMBNAIL(object):
 
     @property
     def thumbnail(self):
-        ba = QByteArray.fromBase64(str(self.thumbnail_base64))
-        return QImage.fromData(ba, 'JPG')
+        if self.thumbnail_base64:
+            ba = QByteArray.fromBase64(str(self.thumbnail_base64))
+            return QImage.fromData(ba, 'JPG')
+        else:
+            return None
 
     @thumbnail.setter
     def thumbnail(self, base64_string_or_qimage):

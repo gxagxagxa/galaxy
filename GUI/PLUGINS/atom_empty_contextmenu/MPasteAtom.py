@@ -40,7 +40,7 @@ class MPasteAtom(MPluginBase):
                     start += 1
                     new_name = x.name + '_{:04d}'.format(start)
 
-            if operator == 'link':
+            if operator == 'copy':
                 if isinstance(x, ATOM):
                     sym_link = LINK(name=new_name, parent=currentORM, target=x)
                 elif isinstance(x, LINK):
@@ -53,6 +53,9 @@ class MPasteAtom(MPluginBase):
                 sess().commit()
 
             elif operator == 'move':
+                # todo: why x.session and currentORM in different session? seems like x already dead when copy to clipboard
+                # todo: and gui need refresh after move (both from and target place)
+                x = DB_UTIL.refresh(x)
                 x.parent = currentORM
                 x.name = new_name
                 x.label = new_name

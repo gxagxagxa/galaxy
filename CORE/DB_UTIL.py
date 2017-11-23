@@ -66,29 +66,35 @@ class DB_UTIL(object):
 
     @staticmethod
     def copy_atom(orm, parent_orm):
-        return ATOM(name=orm.name, parent=parent_orm,
-                    extra_info=orm.extra_info, debug_info=orm.debug_info,
-                    thumbnail_base64=orm.thumbnail_base64,
-                    tags=orm.tags)
+        result = ATOM(name=orm.name, parent=parent_orm,
+                      extra_info=orm.extra_info, debug_info=orm.debug_info,
+                      thumbnail_base64=orm.thumbnail_base64,
+                      tags=orm.tags)
+        sess().add(result)
+        return result
 
     @staticmethod
     def copy_link(orm, parent_orm):
-        return LINK(name=orm.name, parent=parent_orm,
-                    target=parent_orm.target,
-                    extra_info=orm.extra_info, debug_info=orm.debug_info,
-                    thumbnail_base64=orm.thumbnail_base64)
+        result = LINK(name=orm.name, parent=parent_orm,
+                      target=parent_orm.target,
+                      extra_info=orm.extra_info, debug_info=orm.debug_info,
+                      thumbnail_base64=orm.thumbnail_base64)
+        sess().add(result)
+        return result
 
     @staticmethod
     def copy_meta(orm, parent_orm):
-        return META(name=orm.name, parent=parent_orm,
-                    disk_full_path=orm.disk_full_path,
-                    cam_clue=orm.cam_clue,
-                    vfx_seq_clue=orm.vfx_seq_clue,
-                    vfx_shot_clue=orm.vfx_shot_clue,
-                    scene_clue=orm.scene_clue,
-                    shot_clue=orm.shot_clue,
-                    take_clue=orm.take_clue,
-                    extra_info=orm.extra_info, debug_info=orm.debug_info)
+        result = META(name=orm.name, parent=parent_orm,
+                      disk_full_path=orm.disk_full_path,
+                      cam_clue=orm.cam_clue,
+                      vfx_seq_clue=orm.vfx_seq_clue,
+                      vfx_shot_clue=orm.vfx_shot_clue,
+                      scene_clue=orm.scene_clue,
+                      shot_clue=orm.shot_clue,
+                      take_clue=orm.take_clue,
+                      extra_info=orm.extra_info, debug_info=orm.debug_info)
+        sess().add(result)
+        return result
 
     @staticmethod
     def copy_data(orm, parent_orm):
@@ -105,9 +111,10 @@ class DB_UTIL(object):
                       extra_info=orm.extra_info, debug_info=orm.debug_info,
                       thumbnail_base64=orm.thumbnail_base64,
                       file_hash=orm.file_hash,
-                      file_size=orm.file_size,
-                      tags=orm.tags)
-        result.metas = [DB_UTIL.copy_meta(x) for x in orm.metas]
+                      file_size=orm.file_size)
+        sess().add(result)
+        result.tags = orm.tags
+        result.metas = [DB_UTIL.copy_meta(x, result) for x in orm.metas]
         return result
 
     def copy_raw(orm, parent_orm):
@@ -127,9 +134,10 @@ class DB_UTIL(object):
                      extra_info=orm.extra_info, debug_info=orm.debug_info,
                      thumbnail_base64=orm.thumbnail_base64,
                      file_hash=orm.file_hash,
-                     file_size=orm.file_size,
-                     tags=orm.tags)
-        result.metas = [DB_UTIL.copy_meta(x) for x in orm.metas]
+                     file_size=orm.file_size)
+        sess().add(result)
+        result.tags = orm.tags
+        result.metas = [DB_UTIL.copy_meta(x, result) for x in orm.metas]
         return result
 
     @classmethod
@@ -146,14 +154,14 @@ class DB_UTIL(object):
             if first_time:
                 func = getattr(DB_UTIL, 'copy_{}'.format(from_orm.__tablename__), None)
                 ret = func(current, new_parent)
-                sess().add(ret)
+                # sess().add(ret)
                 new_parent = ret
                 first_time = False
 
             for x in DB_UTIL.traverse(current, solve_link=False):
                 func = getattr(DB_UTIL, 'copy_{}'.format(x.__tablename__), None)
                 temp = func(x, new_parent)
-                sess().add(temp)
+                # sess().add(temp)
                 result.append(temp)
                 stack.append(x)
 

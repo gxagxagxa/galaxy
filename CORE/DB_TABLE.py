@@ -136,17 +136,12 @@ tag_raw_dependencies_table = Table('tag_raw_dependencies',
                                           primary_key=True))
 
 
-class RAW(DB_BASE, HAS_BASIC, HAS_EXTRA, HAS_TIMESTAMP, HAS_CLUE, HAS_THUMBNAIL, HAS_SIZE, HAS_LINK):
+class RAW(DB_BASE, HAS_BASIC, HAS_EXTRA, HAS_TIMESTAMP, HAS_CLUE, HAS_THUMBNAIL, HAS_SIZE, HAS_LINK, HAS_TC):
     parent_sid = Column(String(50), index=True)
     parent = relationship('ATOM',
                           primaryjoin='foreign(RAW.parent_sid) == remote(ATOM.sid)',
                           backref=backref('raws', order_by='RAW.name', lazy='dynamic'))
     name = Column(String, index=True)
-    reel = Column(String)
-    in_tc = Column(String)
-    out_tc = Column(String)
-    project_fps = Column(Float, default=24.0)
-    fps = Column(Float, default=24.0)
     tags = relationship('TAG',
                         secondary=tag_raw_dependencies_table,
                         lazy='dynamic',
@@ -173,7 +168,7 @@ tag_data_dependencies_table = Table('tag_data_dependencies',
                                            primary_key=True))
 
 
-class DATA(DB_BASE, HAS_BASIC, HAS_EXTRA, HAS_TIMESTAMP, HAS_FILE, HAS_CLUE, HAS_THUMBNAIL, HAS_SIZE, HAS_LINK):
+class DATA(DB_BASE, HAS_BASIC, HAS_EXTRA, HAS_TIMESTAMP, HAS_FILE, HAS_CLUE, HAS_THUMBNAIL, HAS_SIZE, HAS_LINK, HAS_TC):
     parent_sid = Column(String(50), index=True)
     parent = relationship('ATOM',
                           primaryjoin='foreign(DATA.parent_sid) == remote(ATOM.sid)',

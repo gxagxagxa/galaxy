@@ -53,8 +53,6 @@ class MPasteAtom(MPluginBase):
                 sess().commit()
 
             elif operator == 'move':
-                # todo: why x.session and currentORM in different session? seems like x already dead when copy to clipboard
-                # todo: and gui need refresh after move (both from and target place)
                 x = DB_UTIL.refresh(x)
                 x.parent = currentORM
                 x.name = new_name

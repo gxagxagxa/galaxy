@@ -9,7 +9,7 @@
 from GUI.PLUGINS.MPluginBase import MPluginBase
 from GUI.WIDGETS.MInputDialog import MInputDialog
 from GUI.PLUGINS.MTableHandle import *
-
+from CORE.DB_UTIL import *
 
 class MRenameData(MPluginBase):
     name = 'Rename DATA'
@@ -29,9 +29,15 @@ class MRenameData(MPluginBase):
                     QMessageBox.critical(parentWidget, 'ERROR', 'This name exists.')
                     continue
                 else:
-                    # TODO: rename data?
-                    MData.update(orm, name=name)
-                    self.emit(SIGNAL('sigRefresh()'))
+                    try:
+                        orm = DB_UTIL.refresh(orm)
+                        sess().commit()
+                        MData.update(orm, name=name)
+                        self.emit(SIGNAL('sigRefresh()'))
+                    except:
+                        sess().rollback()
+                        raise Exception('Fail to rename {}:{}'.format(orm.name, orm.sid))
+
                     break
 
     def validate(self, event):

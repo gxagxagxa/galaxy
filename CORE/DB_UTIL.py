@@ -58,40 +58,116 @@ class DB_UTIL(object):
 
     @classmethod
     def file_size(cls, orm):
-        result = set()
-        for x in DB_UTIL.walk(orm):
+        total = 0
+        for x in DB_UTIL.walk(orm, solve_link=False):
             if isinstance(x, (DATA, RAW)):
-                result.add((x.sid, x.file_size))
+                total += x.file_size
+        return total
 
-        return sum((x[1] for x in result))
+    @staticmethod
+    def copy_atom(orm, parent_orm):
+        return ATOM(name=orm.name, parent=parent_orm,
+                    extra_info=orm.extra_info, debug_info=orm.debug_info,
+                    thumbnail_base64=orm.thumbnail_base64,
+                    tags=parent_orm.tags)
+
+    @staticmethod
+    def copy_link(orm, parent_orm):
+        return LINK(name=orm.name, parent=parent_orm,
+                    target=parent_orm.target,
+                    extra_info=orm.extra_info, debug_info=orm.debug_info,
+                    thumbnail_base64=orm.thumbnail_base64)
+
+    @staticmethod
+    def copy_meta(orm, parent_orm):
+        return META(name=orm.name, parent=parent_orm,
+                    disk_full_path=orm.disk_full_path,
+                    cam_clue=orm.cam_clue,
+                    vfx_seq_clue=orm.vfx_seq_clue,
+                    vfx_shot_clue=orm.vfx_shot_clue,
+                    scene_clue=orm.scene_clue,
+                    shot_clue=orm.shot_clue,
+                    take_clue=orm.take_clue,
+                    extra_info=orm.extra_info, debug_info=orm.debug_info)
+
+    @staticmethod
+    def copy_data(orm, parent_orm):
+        result = DATA(name=orm.name, parent=parent_orm,
+                      disk_full_path=orm.disk_full_path,
+                      cam_clue=orm.cam_clue,
+                      vfx_seq_clue=orm.vfx_seq_clue,
+                      vfx_shot_clue=orm.vfx_shot_clue,
+                      scene_clue=orm.scene_clue,
+                      shot_clue=orm.shot_clue,
+                      take_clue=orm.take_clue,
+                      type_name=orm.type_name,
+                      vendor_name=orm.vendor_name,
+                      extra_info=orm.extra_info, debug_info=orm.debug_info,
+                      thumbnail_base64=orm.thumbnail_base64,
+                      file_hash=orm.file_hash,
+                      file_size=orm.file_size)
+        result.metas = [DB_UTIL.copy_meta(x) for x in orm.metas]
+        return result
+
+    def copy_raw(orm, parent_orm):
+        result = RAW(name=orm.name, parent=parent_orm,
+                     disk_full_path=orm.disk_full_path,
+                     cam_clue=orm.cam_clue,
+                     vfx_seq_clue=orm.vfx_seq_clue,
+                     vfx_shot_clue=orm.vfx_shot_clue,
+                     scene_clue=orm.scene_clue,
+                     shot_clue=orm.shot_clue,
+                     take_clue=orm.take_clue,
+                     reel=orm.reel,
+                     in_tc=orm.in_tc,
+                     out_tc=orm.out_tc,
+                     project_fps=orm.project_fps,
+                     fps=orm.fps,
+                     extra_info=orm.extra_info, debug_info=orm.debug_info,
+                     thumbnail_base64=orm.thumbnail_base64,
+                     file_hash=orm.file_hash,
+                     file_size=orm.file_size)
+        result.metas = [DB_UTIL.copy_meta(x) for x in orm.metas]
+        return result
 
     @classmethod
-    def walk(cls, orm):
+    def deep_copy(cls, orm):
+        # for x in DB_UTIL.walk(orm, solve_link=False):
+        #     func = getattr(DB_UTIL, 'copy_{}'.format(x.__tablename__), None)
+        #     if func:
+        #         func()
+        pass
+
+    @classmethod
+    def walk(cls, orm, solve_link=True):
         stack = deque()
         stack.append(orm)
         while stack:
             current = stack.popleft()
             yield current
             # print DB_UTIL.traverse(current)
-            for x in DB_UTIL.traverse(current):
+            for x in DB_UTIL.traverse(current, solve_link=solve_link):
                 stack.append(x)
 
     @classmethod
-    def traverse(cls, orm, recursive=False):
-        def non_recursive_traverse(orm, result=None):
+    def traverse(cls, orm, recursive=False, solve_link=True):
+        def non_recursive_traverse(orm, solve_link=True):
+            if (not solve_link) and isinstance(orm, LINK):
+                return []
+
             if isinstance(orm, (ATOM, LINK)):
                 return chain(*[value for value in orm.items.values()])
             elif isinstance(orm, (DATA, RAW)):
                 return []
 
-        def recursive_traverse(orm, result=None):
+        def recursive_traverse(orm, result=None, solve_link=True):
             if result is None:
                 result = {'current' : orm,
                           'children': []}
 
             now_dict = result
             if isinstance(orm, (ATOM, LINK)):
-                for x in non_recursive_traverse(orm):
+                for x in non_recursive_traverse(orm, solve_link=solve_link):
                     # print now_dict['current'].name, x.name
                     now_dict['children'].append({'current': x, 'children': []})
                     resolve_atom = x.target if isinstance(x, LINK) else x
@@ -103,9 +179,9 @@ class DB_UTIL(object):
             return result
 
         if recursive:
-            return recursive_traverse(orm)
+            return recursive_traverse(orm, solve_link=solve_link)
         else:
-            return non_recursive_traverse(orm)
+            return non_recursive_traverse(orm, solve_link=solve_link)
 
     @classmethod
     def advanced_filter(cls, model_class_name, m_filter, sql_expr=None):
@@ -175,13 +251,13 @@ if __name__ == '__main__':
     # print kk
     # print DB_UTIL.advanced_filter(sess(), 'tag', m_filter).all()
 
-    data1 = sess().query(LINK).get('580d258f-cf54-11e7-a624-f832e47271c1')
+    data1 = sess().query(LINK).get('027fd980-cf61-11e7-9374-0cc47a73af8f')
     # d1 = DATA(name='ppp', parent=data1)
 
     # l1 = LINK(name=data1.name, parent=DB_UTIL.get_root(), target=data1)
     # sess().commit()
 
-    # for x in  DB_UTIL.traverse(data1):
+    # for x in  DB_UTIL.traverse(data1, solve_link=False):
     #     print x
 
     print DB_UTIL.file_size(DB_UTIL.get_root())

@@ -177,6 +177,28 @@ class DB_UTIL(object):
         return ret
 
     @classmethod
+    def make_atoms(cls, posix_path, parents=True):
+        component = posix_path.strip('/').split('/')
+        root = DB_UTIL.get_root()
+        result = [root]
+        current = root
+
+        for item in component:
+            up = current
+            current = next((x for x in DB_UTIL.traverse(current) if x.name == item), None)
+            if current is None:
+                if parents:
+                    current = ATOM(name=item, parent=up)
+                    sess().add(current)
+                else:
+                    result = None
+                    break
+
+            result.append(current)
+
+        return result
+
+    @classmethod
     def walk(cls, orm, solve_link=True):
         stack = deque()
         stack.append(orm)
@@ -298,6 +320,6 @@ if __name__ == '__main__':
     # for x in  DB_UTIL.traverse(data1, solve_link=False):
     #     print x
 
-    k = DB_UTIL.deep_copy(a1, DB_UTIL.get_root())
-    sess().flush()
+    k = DB_UTIL.make_atoms('/1/2/3/4/5')
+    sess().commit()
     # time.sleep(20)

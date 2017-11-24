@@ -66,29 +66,35 @@ class DB_UTIL(object):
 
     @staticmethod
     def copy_atom(orm, parent_orm):
-        return ATOM(name=orm.name, parent=parent_orm,
-                    extra_info=orm.extra_info, debug_info=orm.debug_info,
-                    thumbnail_base64=orm.thumbnail_base64,
-                    tags=parent_orm.tags)
+        result = ATOM(name=orm.name, parent=parent_orm,
+                      extra_info=orm.extra_info, debug_info=orm.debug_info,
+                      thumbnail_base64=orm.thumbnail_base64,
+                      tags=orm.tags)
+        sess().add(result)
+        return result
 
     @staticmethod
     def copy_link(orm, parent_orm):
-        return LINK(name=orm.name, parent=parent_orm,
-                    target=parent_orm.target,
-                    extra_info=orm.extra_info, debug_info=orm.debug_info,
-                    thumbnail_base64=orm.thumbnail_base64)
+        result = LINK(name=orm.name, parent=parent_orm,
+                      target=parent_orm.target,
+                      extra_info=orm.extra_info, debug_info=orm.debug_info,
+                      thumbnail_base64=orm.thumbnail_base64)
+        sess().add(result)
+        return result
 
     @staticmethod
     def copy_meta(orm, parent_orm):
-        return META(name=orm.name, parent=parent_orm,
-                    disk_full_path=orm.disk_full_path,
-                    cam_clue=orm.cam_clue,
-                    vfx_seq_clue=orm.vfx_seq_clue,
-                    vfx_shot_clue=orm.vfx_shot_clue,
-                    scene_clue=orm.scene_clue,
-                    shot_clue=orm.shot_clue,
-                    take_clue=orm.take_clue,
-                    extra_info=orm.extra_info, debug_info=orm.debug_info)
+        result = META(name=orm.name, parent=parent_orm,
+                      disk_full_path=orm.disk_full_path,
+                      cam_clue=orm.cam_clue,
+                      vfx_seq_clue=orm.vfx_seq_clue,
+                      vfx_shot_clue=orm.vfx_shot_clue,
+                      scene_clue=orm.scene_clue,
+                      shot_clue=orm.shot_clue,
+                      take_clue=orm.take_clue,
+                      extra_info=orm.extra_info, debug_info=orm.debug_info)
+        sess().add(result)
+        return result
 
     @staticmethod
     def copy_data(orm, parent_orm):
@@ -106,7 +112,9 @@ class DB_UTIL(object):
                       thumbnail_base64=orm.thumbnail_base64,
                       file_hash=orm.file_hash,
                       file_size=orm.file_size)
-        result.metas = [DB_UTIL.copy_meta(x) for x in orm.metas]
+        sess().add(result)
+        result.tags = orm.tags
+        result.metas = [DB_UTIL.copy_meta(x, result) for x in orm.metas]
         return result
 
     def copy_raw(orm, parent_orm):
@@ -127,16 +135,37 @@ class DB_UTIL(object):
                      thumbnail_base64=orm.thumbnail_base64,
                      file_hash=orm.file_hash,
                      file_size=orm.file_size)
-        result.metas = [DB_UTIL.copy_meta(x) for x in orm.metas]
+        sess().add(result)
+        result.tags = orm.tags
+        result.metas = [DB_UTIL.copy_meta(x, result) for x in orm.metas]
         return result
 
     @classmethod
-    def deep_copy(cls, orm):
-        # for x in DB_UTIL.walk(orm, solve_link=False):
-        #     func = getattr(DB_UTIL, 'copy_{}'.format(x.__tablename__), None)
-        #     if func:
-        #         func()
-        pass
+    def deep_copy(cls, from_orm, to_orm):
+        result = deque()
+        stack = deque()
+        stack.append(from_orm)
+        first_time = True
+        ret = None
+
+        while stack:
+            current = stack.popleft()
+            new_parent = result.popleft() if len(result) else to_orm
+            if first_time:
+                func = getattr(DB_UTIL, 'copy_{}'.format(from_orm.__tablename__), None)
+                ret = func(current, new_parent)
+                # sess().add(ret)
+                new_parent = ret
+                first_time = False
+
+            for x in DB_UTIL.traverse(current, solve_link=False):
+                func = getattr(DB_UTIL, 'copy_{}'.format(x.__tablename__), None)
+                temp = func(x, new_parent)
+                # sess().add(temp)
+                result.append(temp)
+                stack.append(x)
+
+        return ret
 
     @classmethod
     def walk(cls, orm, solve_link=True):
@@ -251,7 +280,7 @@ if __name__ == '__main__':
     # print kk
     # print DB_UTIL.advanced_filter(sess(), 'tag', m_filter).all()
 
-    data1 = sess().query(LINK).get('027fd980-cf61-11e7-9374-0cc47a73af8f')
+    a1 = sess().query(ATOM).get('8e4b930f-cf6a-11e7-99b3-0cc47a73af8f')
     # d1 = DATA(name='ppp', parent=data1)
 
     # l1 = LINK(name=data1.name, parent=DB_UTIL.get_root(), target=data1)
@@ -260,4 +289,5 @@ if __name__ == '__main__':
     # for x in  DB_UTIL.traverse(data1, solve_link=False):
     #     print x
 
-    print DB_UTIL.file_size(DB_UTIL.get_root())
+    k = DB_UTIL.deep_copy(a1, DB_UTIL.get_root())
+    sess().commit()

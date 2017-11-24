@@ -70,15 +70,15 @@ class HAS_TIMESTAMP(object):
 class HAS_EXTRA(object):
     @declared_attr
     def extra_info(cls):
-        return deferred(Column(String))
+        return deferred(Column(String, default=''))
 
     @declared_attr
     def debug_info(cls):
-        return deferred(Column(String))
+        return deferred(Column(String, default=''))
 
 
 class HAS_FILE(object):
-    disk_full_path = Column(String)
+    disk_full_path = Column(String, default='')
 
     @property
     def full_path(self):
@@ -93,12 +93,12 @@ class HAS_FILE(object):
 
 
 class HAS_CLUE(object):
-    cam_clue = Column(String)
-    vfx_seq_clue = Column(String)
-    vfx_shot_clue = Column(String)
-    scene_clue = Column(String)
-    shot_clue = Column(String)
-    take_clue = Column(String)
+    cam_clue = Column(String, index=True, default='')
+    vfx_seq_clue = Column(String, index=True, default='')
+    vfx_shot_clue = Column(String, index=True, default='')
+    scene_clue = Column(String, index=True, default='')
+    shot_clue = Column(String, index=True, default='')
+    take_clue = Column(String, index=True, default='')
 
 
 class HAS_SIZE(object):
@@ -108,18 +108,29 @@ class HAS_SIZE(object):
 
     @declared_attr
     def file_hash(cls):
-        return deferred(Column(String))
+        return deferred(Column(String, default=''))
+
+
+class HAS_TC(object):
+    reel = Column(String, default='')
+    in_tc = Column(String, default='')
+    out_tc = Column(String, default='')
+    project_fps = Column(Float, default=24.0)
+    fps = Column(Float, default=24.0)
 
 
 class HAS_THUMBNAIL(object):
     @declared_attr
     def thumbnail_base64(cls):
-        return deferred(Column(String))
+        return deferred(Column(String, default=''))
 
     @property
     def thumbnail(self):
-        ba = QByteArray.fromBase64(str(self.thumbnail_base64))
-        return QImage.fromData(ba, 'JPG')
+        if self.thumbnail_base64:
+            ba = QByteArray.fromBase64(str(self.thumbnail_base64))
+            return QImage.fromData(ba, 'JPG')
+        else:
+            return None
 
     @thumbnail.setter
     def thumbnail(self, base64_string_or_qimage):

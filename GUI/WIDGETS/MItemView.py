@@ -76,15 +76,19 @@ class MHeaderView(QHeaderView):
 
 
 class MTableView(QTableView):
-    def __init__(self, parent=None):
+    def __init__(self, headerList, parent=None):
         super(MTableView, self).__init__(parent)
         self.parentORM = None
         self.realModel = MTableModel()
-        headerList = [
-            {'attr': 'name', 'name': 'Name'}
-        ]
+        # headerList = [
+        #     {'attr': 'name', 'name': 'Name'}
+        # ]
         self.headerList = headerList
         self.setHeaderList(headerList)
+        self._headerView = MHeaderView(Qt.Horizontal)
+        self.setHorizontalHeader(self._headerView)
+        # self.setShowGrid(self.settingDict.get('grid', False))
+        self._headerView.setClickable(True)
         self.childListView = None
         self.parentListView = None
         self.sortFilterModel = QSortFilterProxyModel()
@@ -92,10 +96,17 @@ class MTableView(QTableView):
         self.setModel(self.sortFilterModel)
         self.setMenu()
         self.setSigSlot()
+        self.resizeHeaders(headerList)
 
     def setHeaderList(self, headerList):
         if not headerList: return
         self.realModel.setHeaders(headerList)
+
+    def resizeHeaders(self, headerList):
+        if not headerList: return
+        for index, i in enumerate(headerList):
+            self._headerView.setSectionHidden(index, not i.get('default_show', True))
+            self._headerView.resizeSection(index, i.get('width', 100))
 
     def _getORMList(self, parentORM):
         return DB_UTIL.traverse(parentORM)
@@ -212,6 +223,7 @@ class MListView(QListView):
         self.setModelColumn(0)
         self.setMenu()
         self.setSigSlot()
+        self.setAcceptDrops(True)
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
 
     def setHeaderList(self, headerList):
@@ -320,3 +332,19 @@ class MListView(QListView):
         self.connect(self.selectionModel(), SIGNAL('selectionChanged(QItemSelection, QItemSelection)'),
                      self.slotSelectedItemChanged)
         self.connect(self, SIGNAL('doubleClicked(QModelIndex)'), self.slotDoubleClicked)
+
+    def focusInEvent(self, event):
+        self.emit(SIGNAL('sigGetFocus(PyObject)'), self.parentORM)
+
+    def dragEnterEvent(self, event):
+        event.acceptProposedAction()
+        event.accept()
+
+    def dragMoveEvent(self, event):
+        event.accept()
+
+    def dropEvent(self, event):
+        url = event.mimeData().urls()[0]
+        fileName = url.toLocalFile()
+        self.emit(SIGNAL('sigDropFile(QString)'), fileName)
+        event.accept()

@@ -29,10 +29,10 @@ def getValue(obj, attr):
                 if isinstance(i, dict):
                     result.append(i.get('name').decode('utf-8') if i.has_key('name') else i.get('code', None))
                 else:
-                    result.append(str(i) if not isinstance(i, basestring) else i.decode('utf-8'))
+                    result.append(str(i) )#if not isinstance(i, basestring) else i.decode('utf-8'))
             return ','.join(result)
         else:
-            return value if not isinstance(value, basestring) else value.decode('utf-8')
+            return value #if not isinstance(value, basestring) else value.decode('utf-8')
     else:
         return getattr(obj, attr, None)
 

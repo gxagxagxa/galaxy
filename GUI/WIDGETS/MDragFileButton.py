@@ -61,7 +61,7 @@ class MDragFileButton(QPushButton):
             urls = event.mimeData().urls()
             if len(urls) == 1:
                 fileName = urls[0].toLocalFile()
-                if self.folderMode == MDragFileButton.FILE and os.path.splitext(fileName)[-1] in self.extList:
+                if self.folderMode == MDragFileButton.FILE:# and os.path.splitext(fileName)[-1] in self.extList:
                     event.acceptProposedAction()
                 elif os.path.isdir(fileName) and self.folderMode == MDragFileButton.FOLDER:
                     event.acceptProposedAction()

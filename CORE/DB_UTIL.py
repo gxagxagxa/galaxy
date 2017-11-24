@@ -35,7 +35,8 @@ class DB_UTIL(object):
             return result[-2::-1]
 
     @classmethod
-    def goto(cls, posix_path):
+    def goto(cls, posix_path, relative_orm=None):
+        #need implement relative posix path, such as .. / .
         root = DB_UTIL.get_root()
         result = [root]
         component = posix_path.strip('/').split('/')

@@ -9,7 +9,7 @@
 from GUI.PLUGINS.MPluginBase import MPluginBase
 from GUI.QT import *
 from GUI.PLUGINS.MTableHandle import *
-
+from CORE.DB_UTIL import *
 
 class MDeleteData(MPluginBase):
     name = 'Delete DATA'
@@ -28,8 +28,14 @@ class MDeleteData(MPluginBase):
             msg.setDefaultButton(QMessageBox.Yes)
             ret = msg.exec_()
             if ret == QMessageBox.Yes:
-                # TODO: delete data orm
-                self.emit(SIGNAL('sigRefresh()'))
+                try:
+                    orm = DB_UTIL.refresh(orm)
+                    sess().delete(orm)
+                    sess().commit()
+                    self.emit(SIGNAL('sigRefresh()'))
+                except:
+                    sess().rollback()
+                    raise Exception('Fail to Delete {}:{}',format(orm.sid, orm.name))
         else:
             QMessageBox.critical(parentWidget, 'ERROR', 'This data can\'t delete')
 

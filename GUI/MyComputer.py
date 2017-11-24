@@ -111,6 +111,7 @@ class MMultiListViewWidget(QWidget):
         self.detailWidget.setVisible(False)
 
         self.connect(self.rootListView, SIGNAL('sigSelectedChanged(PyObject)'), partial(self.slotCurrentChanged, self.rootListView))
+        self.connect(self.rootListView, SIGNAL('sigGoTo(object)'), self.slotGoTo)
         self.splitter.addWidget(self.rootListView)
         self.splitter.addWidget(self.detailWidget)
         self.scrollArea.setWidget(self.splitter)
@@ -123,33 +124,40 @@ class MMultiListViewWidget(QWidget):
     def slotScroll2Right(self, a, b):
         self.scrollArea.horizontalScrollBar().setValue(b)
 
+    def slotGoTo(self, targetORM):
+        #TODO: go to path
+        print 'slotGoTo', DB_UTIL.hierarchy(targetORM, posix=True)
+
     @Slot(MListView, object)
     def slotCurrentChanged(self, parentListView, parentORMs):
         parentORM = parentORMs
         if len(parentORMs)>=1:
             parentORM = parentORMs[0]
 
-        currentIndex = self.splitter.indexOf(parentListView)
-        for i in range(self.splitter.count()):
-            if i > currentIndex:
-                self.splitter.widget(i).setVisible(isinstance(parentORM, ATOM))
-
         if isinstance(parentORM, LINK):
             if parentORM.target_table == 'atom':
                 self.handleAtom(parentListView, parentORM)
             else:
-                self.handleData(currentIndex, parentORM)
+                self.handleData(parentListView, parentORM)
         elif isinstance(parentORM, ATOM):
             self.handleAtom(parentListView, parentORM)
         elif isinstance(parentORM, DATA):
-            self.handleData(currentIndex, parentORM)
+            self.handleData(parentListView, parentORM)
         self.emit(SIGNAL('sigPathChanged(QString)'), DB_UTIL.hierarchy(parentORM, posix=True))
 
     def handleAtom(self, parentListView, parentORM):
+        currentIndex = self.splitter.indexOf(parentListView)
+        for i in range(self.splitter.count()):
+            if i > currentIndex:
+                self.splitter.widget(i).setVisible(True)
         self.detailWidget.setVisible(False)
         self.addNewListView(parentListView, parentORM)
 
-    def handleData(self, currentIndex, parentORM):
+    def handleData(self, parentListView, parentORM):
+        currentIndex = self.splitter.indexOf(parentListView)
+        for i in range(self.splitter.count()):
+            if i > currentIndex:
+                self.splitter.widget(i).setVisible(False)
         self.splitter.insertWidget(currentIndex + 1, self.detailWidget)
         self.detailWidget.initData(parentORM)
         self.detailWidget.setVisible(True)
@@ -159,6 +167,7 @@ class MMultiListViewWidget(QWidget):
         if not newListView:
             newListView = MListView()
             self.connect(newListView, SIGNAL('sigSelectedChanged(PyObject)'), partial(self.slotCurrentChanged, newListView))
+            self.connect(newListView, SIGNAL('sigGoTo(object)'), self.slotGoTo)
             parentListView.setChildListView(newListView)
             newListView.setParentListView(parentListView)
             self.listViewList.append(newListView)

@@ -185,6 +185,14 @@ class MTableView(QTableView):
                         self.connect(plugin, SIGNAL('sigRefresh()'), partial(self.slotUpdate, self.parentORM))
         contextMenu.exec_(cur)
 
+listViewSettingDict = {
+    'reverse': False,
+    'filterable': False,
+    'menu': False,
+    'selectionBehavior': QAbstractItemView.SelectRows,
+    'selectionMode': QAbstractItemView.ContiguousSelection,
+    'displayAttr': 'name'
+}
 
 class MListView(QListView):
     def __init__(self, parent=None):
@@ -204,6 +212,7 @@ class MListView(QListView):
         self.setModelColumn(0)
         self.setMenu()
         self.setSigSlot()
+        self.setSelectionMode(QAbstractItemView.ExtendedSelection)
 
     def setHeaderList(self, headerList):
         if not headerList: return
@@ -227,14 +236,17 @@ class MListView(QListView):
         proxyIndex = self.indexAt(point)
         contextMenu = QMenu(self)
         if proxyIndex.isValid():
-            realIndex = self.sortFilterModel.mapToSource(proxyIndex)
-            dataORM = self.realModel.getORM(realIndex)
+            ormList = self.getSelectedItemsData()
+            if not ormList:
+                realIndex = self.sortFilterModel.mapToSource(proxyIndex)
+                ormList = [self.realModel.getORM(realIndex)]
+            dataORM = ormList[0]
             event = '{table}_contextmenu'.format(table=getattr(dataORM, '__tablename__', None))
             for plugin in MPluginManager.loadPlugins(self, event):
-                if plugin.validate({'orm': dataORM}):
+                if plugin.validate({'orm': ormList}):
                     action = contextMenu.addAction(QIcon(IMAGE_PATH + '/' + plugin.icon), plugin.name)
                     self.connect(action, SIGNAL('triggered()'),
-                                 partial(plugin.run, {'parentWidget': self, 'orm': dataORM}))
+                                 partial(plugin.run, {'parentWidget': self, 'orm': ormList}))
                     if plugin.shortcut is not None:
                         action.setShortcut(QKeySequence(plugin.shortcut))
                     if plugin.needRefresh:

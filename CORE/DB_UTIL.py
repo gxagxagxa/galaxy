@@ -66,6 +66,8 @@ class DB_UTIL(object):
 
     @staticmethod
     def copy_atom(orm, parent_orm):
+        if orm.session is None:
+            orm = DB_UTIL.refresh(orm)
         result = ATOM(name=orm.name, parent=parent_orm,
                       extra_info=orm.extra_info, debug_info=orm.debug_info,
                       thumbnail_base64=orm.thumbnail_base64,
@@ -75,6 +77,8 @@ class DB_UTIL(object):
 
     @staticmethod
     def copy_link(orm, parent_orm):
+        if orm.session is None:
+            orm = DB_UTIL.refresh(orm)
         result = LINK(name=orm.name, parent=parent_orm,
                       target=parent_orm.target,
                       extra_info=orm.extra_info, debug_info=orm.debug_info,
@@ -84,6 +88,8 @@ class DB_UTIL(object):
 
     @staticmethod
     def copy_meta(orm, parent_orm):
+        if orm.session is None:
+            orm = DB_UTIL.refresh(orm)
         result = META(name=orm.name, parent=parent_orm,
                       disk_full_path=orm.disk_full_path,
                       cam_clue=orm.cam_clue,
@@ -98,6 +104,8 @@ class DB_UTIL(object):
 
     @staticmethod
     def copy_data(orm, parent_orm):
+        if orm.session is None:
+            orm = DB_UTIL.refresh(orm)
         result = DATA(name=orm.name, parent=parent_orm,
                       disk_full_path=orm.disk_full_path,
                       cam_clue=orm.cam_clue,
@@ -117,7 +125,10 @@ class DB_UTIL(object):
         result.metas = [DB_UTIL.copy_meta(x, result) for x in orm.metas]
         return result
 
+    @staticmethod
     def copy_raw(orm, parent_orm):
+        if orm.session is None:
+            orm = DB_UTIL.refresh(orm)
         result = RAW(name=orm.name, parent=parent_orm,
                      disk_full_path=orm.disk_full_path,
                      cam_clue=orm.cam_clue,
@@ -154,14 +165,12 @@ class DB_UTIL(object):
             if first_time:
                 func = getattr(DB_UTIL, 'copy_{}'.format(from_orm.__tablename__), None)
                 ret = func(current, new_parent)
-                # sess().add(ret)
                 new_parent = ret
                 first_time = False
 
             for x in DB_UTIL.traverse(current, solve_link=False):
                 func = getattr(DB_UTIL, 'copy_{}'.format(x.__tablename__), None)
                 temp = func(x, new_parent)
-                # sess().add(temp)
                 result.append(temp)
                 stack.append(x)
 
@@ -290,4 +299,5 @@ if __name__ == '__main__':
     #     print x
 
     k = DB_UTIL.deep_copy(a1, DB_UTIL.get_root())
-    sess().commit()
+    sess().flush()
+    # time.sleep(20)

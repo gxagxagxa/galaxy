@@ -22,6 +22,7 @@ class MInjectDataDialog(QDialog):
         geo = QApplication.desktop().screenGeometry()
         self.setGeometry(geo.width() / 4, geo.height() / 4, geo.width()/2, geo.height()/2)
         self.parentORM = orm
+        self.origFileList = []
         self.initUI()
 
     def initUI(self):
@@ -68,6 +69,10 @@ class MInjectDataDialog(QDialog):
             fileList = [fileList]
         resultList = []
         for fileName in fileList:
+            if fileName in self.origFileList:
+                print fileName, 'is already in result list'
+                continue
+            self.origFileList.append(fileName)
             ap = APATH.APATH(fileName)
             resultDict = ap.scan()
             if isinstance(resultDict, dict):
@@ -102,6 +107,8 @@ class MInjectDataDialog(QDialog):
             QMessageBox.warning(self, self.tr('warning'), self.tr('please_select_a_row'))
 
     def slotContinue(self):
+        #TODO: 首先校验一下是否跟数据库已有的data有重复
+        #TODO: 然后将这些文件们入库
         print self.resultTableView.getAllItemsData()
 
 

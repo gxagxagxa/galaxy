@@ -180,7 +180,7 @@ class MMultiListViewWidget(QWidget):
             self.connect(newListView, SIGNAL('sigSelectedChanged(PyObject)'), partial(self.slotCurrentChanged, newListView))
             self.connect(newListView, SIGNAL('sigGoTo(PyObject)'), self.slotGoTo)
             self.connect(newListView, SIGNAL('sigGetFocus(PyObject)'), self.slotGetFocus)
-            self.connect(newListView, SIGNAL('sigDropFile(QString)'), partial(self.slotShowInjectDataDialog, newListView))
+            self.connect(newListView, SIGNAL('sigDropFile(PyObject)'), partial(self.slotShowInjectDataDialog, newListView))
 
             parentListView.setChildListView(newListView)
             newListView.setParentListView(parentListView)
@@ -194,11 +194,11 @@ class MMultiListViewWidget(QWidget):
     def slotGetFocus(self, orm):
         self.emit(SIGNAL('sigPathChanged(QString)'), DB_UTIL.hierarchy(orm, posix=True))
 
-    @Slot(str)
+    @Slot(list)
     def slotShowInjectDataDialog(self, listView, fileList):
         dialog = MInjectDataDialog(listView.parentORM, self)
-        dialog.slotAddFile(fileList)
-        dialog.exec_()
+        dialog.slotAddFiles(fileList)
+        dialog.show()
 
     def clearDownstreamListView(self, startListView):
         child = startListView.childListView

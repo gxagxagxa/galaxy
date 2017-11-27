@@ -14,6 +14,43 @@ from MItemModel import MTableModel
 from CORE.DB_UTIL import *
 
 
+@Slot(QModelIndex, QModelIndex)
+def _slotCurrentItemChanged(self, currentIndex, before):
+    self.emit(SIGNAL('sigCurrentChanged(PyObject)'), self.getCurrentItemData())
+
+
+@Slot(QItemSelection, QItemSelection)
+def _slotSelectedItemChanged(self, currentSelected, before):
+    self.emit(SIGNAL('sigSelectedChanged(PyObject)'), self.getSelectedItemsData())
+
+
+@Slot(QModelIndex)
+def _slotDoubleClicked(self, index):
+    realIndex = self.sortFilterModel.mapToSource(index)
+    self.emit(SIGNAL('sigDoubleClicked(PyObject)'), self.realModel.getORM(realIndex))
+
+
+def _getCurrentIndex(self):
+    return self.sortFilterModel.mapToSource(self.currentIndex())
+
+
+def _getSelectedIndexes(self):
+    return [self.sortFilterModel.mapToSource(i) for i in self.selectedIndexes()]
+
+
+def _getCurrentItemData(self):
+    return self.realModel.getORM(self.getCurrentIndex())
+
+
+def _clear(self):
+    self.realModel.setDataList([])
+
+
+def _getAllItemsData(self):
+    return self.realModel.dataList[:]
+
+
+
 class MHeaderView(QHeaderView):
     def __init__(self, orientation, parent=None):
         super(MHeaderView, self).__init__(orientation, parent)
@@ -76,6 +113,14 @@ class MHeaderView(QHeaderView):
 
 
 class MTableView(QTableView):
+    slotCurrentItemChanged = _slotCurrentItemChanged
+    slotSelectedItemChanged = _slotSelectedItemChanged
+    slotDoubleClicked = _slotDoubleClicked
+    getCurrentIndex = _getCurrentIndex
+    getSelectedIndexes = _getSelectedIndexes
+    getCurrentItemData = _getCurrentItemData
+    clear = _clear
+    getAllItemsData = _getAllItemsData
     def __init__(self, headerList, parent=None):
         super(MTableView, self).__init__(parent)
         self.parentORM = None
@@ -138,21 +183,6 @@ class MTableView(QTableView):
         realIndex = self.sortFilterModel.mapToSource(index)
         self.emit(SIGNAL('sigDoubleClicked(PyObject)'), self.realModel.getORM(realIndex))
 
-    def getCurrentIndex(self):
-        return self.sortFilterModel.mapToSource(self.currentIndex())
-
-    def getSelectedIndexes(self):
-        return [self.sortFilterModel.mapToSource(i) for i in self.selectedIndexes()]
-
-    def getCurrentItemData(self):
-        return self.realModel.getORM(self.getCurrentIndex())
-
-    def clear(self):
-        self.realModel.setDataList([])
-
-    def getAllItemsData(self):
-        return self.realModel.dataList[:]
-
     def setMenu(self):
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.connect(self, SIGNAL('customContextMenuRequested(const QPoint&)'),
@@ -206,6 +236,14 @@ listViewSettingDict = {
 }
 
 class MListView(QListView):
+    slotCurrentItemChanged = _slotCurrentItemChanged
+    slotSelectedItemChanged = _slotSelectedItemChanged
+    slotDoubleClicked = _slotDoubleClicked
+    getCurrentIndex = _getCurrentIndex
+    getSelectedIndexes = _getSelectedIndexes
+    getCurrentItemData = _getCurrentItemData
+    clear = _clear
+    getAllItemsData = _getAllItemsData
     def __init__(self, parent=None):
         super(MListView, self).__init__(parent)
         self.parentORM = None
@@ -293,34 +331,6 @@ class MListView(QListView):
         else:
             self.clear()
 
-    @Slot(QModelIndex, QModelIndex)
-    def slotCurrentItemChanged(self, currentIndex, before):
-        self.emit(SIGNAL('sigCurrentChanged(PyObject)'), self.getCurrentItemData())
-
-    @Slot(QItemSelection, QItemSelection)
-    def slotSelectedItemChanged(self, currentSelected, before):
-        self.emit(SIGNAL('sigSelectedChanged(PyObject)'), self.getSelectedItemsData())
-
-    @Slot(QModelIndex)
-    def slotDoubleClicked(self, index):
-        realIndex = self.sortFilterModel.mapToSource(index)
-        self.emit(SIGNAL('sigDoubleClicked(PyObject)'), self.realModel.getORM(realIndex))
-
-    def getCurrentIndex(self):
-        return self.sortFilterModel.mapToSource(self.currentIndex())
-
-    def getSelectedIndexes(self):
-        return [self.sortFilterModel.mapToSource(i) for i in self.selectedIndexes()]
-
-    def getCurrentItemData(self):
-        return self.realModel.getORM(self.getCurrentIndex())
-
-    def clear(self):
-        self.realModel.setDataList([])
-
-    def getAllItemsData(self):
-        return self.realModel.dataList[:]
-
     def setMenu(self):
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.connect(self, SIGNAL('customContextMenuRequested(const QPoint&)'),
@@ -337,14 +347,12 @@ class MListView(QListView):
         self.emit(SIGNAL('sigGetFocus(PyObject)'), self.parentORM)
 
     def dragEnterEvent(self, event):
-        event.acceptProposedAction()
-        event.accept()
+        if event.mimeData().hasFormat("text/uri-list"):
+            event.acceptProposedAction()
 
     def dragMoveEvent(self, event):
-        event.accept()
+        event.acceptProposedAction()
 
     def dropEvent(self, event):
-        url = event.mimeData().urls()[0]
-        fileName = url.toLocalFile()
-        self.emit(SIGNAL('sigDropFile(QString)'), fileName)
-        event.accept()
+        fileList = [url.toLocalFile() for url in event.mimeData().urls()]
+        self.emit(SIGNAL('sigDropFile(PyObject)'), fileList)

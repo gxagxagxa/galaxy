@@ -35,8 +35,8 @@ class MInjectDataDialog(QDialog):
         self.dragFileButton = MDragFileButton()
         self.dragFileButton.setFixedHeight(100)
         # self.dragFileButton.setExtList(['.csv', '.jpg', '.png'])
-        self.connect(self.dragFolderButton, SIGNAL('sigGetFile(QString)'), self.slotAddFile)
-        self.connect(self.dragFileButton, SIGNAL('sigGetFile(QString)'), self.slotAddFile)
+        self.connect(self.dragFolderButton, SIGNAL('sigGetFile(PyObject)'), self.slotAddFiles)
+        self.connect(self.dragFileButton, SIGNAL('sigGetFile(PyObject)'), self.slotAddFiles)
 
         fileLay = QFormLayout()
         fileLay.addRow('Folder:', self.dragFolderButton)
@@ -63,15 +63,18 @@ class MInjectDataDialog(QDialog):
         mainLay.addLayout(buttLay)
         self.setLayout(mainLay)
 
-    def slotAddFile(self, fileName):
-        ap = APATH.APATH(fileName)
+    def slotAddFiles(self, fileList):
+        if not isinstance(fileList, list):
+            fileList = [fileList]
         resultList = []
-        resultDict = ap.scan()
-        if isinstance(resultDict, dict):
-            resultList.append(self._addExtraData(resultDict))
-        else:
-            for dataDict in resultDict:
-                resultList.append(self._addExtraData(dataDict))
+        for fileName in fileList:
+            ap = APATH.APATH(fileName)
+            resultDict = ap.scan()
+            if isinstance(resultDict, dict):
+                resultList.append(self._addExtraData(resultDict))
+            else:
+                for dataDict in resultDict:
+                    resultList.append(self._addExtraData(dataDict))
 
         origDataList = self.resultTableView.getAllItemsData()
         origDataList.extend(resultList)

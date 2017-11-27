@@ -9,7 +9,7 @@
 from GUI.PLUGINS.MPluginBase import MPluginBase
 from GUI.QT import *
 from GUI.PLUGINS.MTableHandle import *
-
+from CORE.DB_UTIL import *
 
 class MDeleteData(MPluginBase):
     name = 'Delete DATA'
@@ -19,20 +19,28 @@ class MDeleteData(MPluginBase):
 
     def run(self, event):
         parentWidget = event.get('parentWidget')
-        ormList = event.get('orm')
-        for orm in ormList:
-            if MData.canDelete(orm):
-                msg = QMessageBox(parentWidget)
-                msg.setText('Are you sure?')
-                msg.setInformativeText('Delete Data: %s' % orm.name)
-                msg.setStandardButtons(QMessageBox.Yes | QMessageBox.Cancel)
-                msg.setDefaultButton(QMessageBox.Yes)
-                ret = msg.exec_()
-                if ret == QMessageBox.Yes:
-                    MData.delete(orm)
+        orm = event.get('orm')
+        if MAtom.canDelete(orm):
+            msg = QMessageBox(parentWidget)
+            msg.setText('Are you sure?')
+            msg.setInformativeText('Delete Data: %s' % orm.name)
+            msg.setStandardButtons(QMessageBox.Yes | QMessageBox.Cancel)
+            msg.setDefaultButton(QMessageBox.Yes)
+            ret = msg.exec_()
+            if ret == QMessageBox.Yes:
+                try:
+                    orm = DB_UTIL.refresh(orm)
+                    sess().delete(orm)
+                    sess().commit()
                     self.emit(SIGNAL('sigRefresh()'))
-            else:
-                QMessageBox.critical(parentWidget, 'ERROR', 'This data can\'t delete')
+                except:
+                    sess().rollback()
+                    raise Exception('Fail to Delete {}:{}',format(orm.sid, orm.name))
+        else:
+            QMessageBox.critical(parentWidget, 'ERROR', 'This data can\'t delete')
 
     def validate(self, event):
+        parentWidget = event.get('parentWidget')
+        orm = event.get('orm')
+        print orm.name
         return True

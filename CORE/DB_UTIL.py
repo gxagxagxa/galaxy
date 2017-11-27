@@ -35,13 +35,26 @@ class DB_UTIL(object):
             return result[-2::-1]
 
     @classmethod
-    def goto(cls, posix_path):
-        root = DB_UTIL.get_root()
+    def goto(cls, posix_path, relative_orm=None):
+        if posix_path.startswith('/'):
+            root = DB_UTIL.get_root()
+        else:
+            if relative_orm:
+                root = relative_orm
+            else:
+                raise Exception('using relative posix path, without giving relative orm')
+
         result = [root]
         component = posix_path.strip('/').split('/')
 
         current = root
         for item in component:
+            if item == '..':
+                current = current.parent
+
+            if item == '.':
+                pass
+
             current = next((x for x in DB_UTIL.traverse(current) if x.name == item), None)
             if current is None:
                 result = None
@@ -66,6 +79,8 @@ class DB_UTIL(object):
 
     @staticmethod
     def copy_atom(orm, parent_orm):
+        if orm.session is None:
+            orm = DB_UTIL.refresh(orm)
         result = ATOM(name=orm.name, parent=parent_orm,
                       extra_info=orm.extra_info, debug_info=orm.debug_info,
                       thumbnail_base64=orm.thumbnail_base64,
@@ -75,6 +90,8 @@ class DB_UTIL(object):
 
     @staticmethod
     def copy_link(orm, parent_orm):
+        if orm.session is None:
+            orm = DB_UTIL.refresh(orm)
         result = LINK(name=orm.name, parent=parent_orm,
                       target=parent_orm.target,
                       extra_info=orm.extra_info, debug_info=orm.debug_info,
@@ -84,6 +101,8 @@ class DB_UTIL(object):
 
     @staticmethod
     def copy_meta(orm, parent_orm):
+        if orm.session is None:
+            orm = DB_UTIL.refresh(orm)
         result = META(name=orm.name, parent=parent_orm,
                       disk_full_path=orm.disk_full_path,
                       cam_clue=orm.cam_clue,
@@ -98,6 +117,8 @@ class DB_UTIL(object):
 
     @staticmethod
     def copy_data(orm, parent_orm):
+        if orm.session is None:
+            orm = DB_UTIL.refresh(orm)
         result = DATA(name=orm.name, parent=parent_orm,
                       disk_full_path=orm.disk_full_path,
                       cam_clue=orm.cam_clue,
@@ -117,7 +138,10 @@ class DB_UTIL(object):
         result.metas = [DB_UTIL.copy_meta(x, result) for x in orm.metas]
         return result
 
+    @staticmethod
     def copy_raw(orm, parent_orm):
+        if orm.session is None:
+            orm = DB_UTIL.refresh(orm)
         result = RAW(name=orm.name, parent=parent_orm,
                      disk_full_path=orm.disk_full_path,
                      cam_clue=orm.cam_clue,
@@ -154,18 +178,38 @@ class DB_UTIL(object):
             if first_time:
                 func = getattr(DB_UTIL, 'copy_{}'.format(from_orm.__tablename__), None)
                 ret = func(current, new_parent)
-                # sess().add(ret)
                 new_parent = ret
                 first_time = False
 
             for x in DB_UTIL.traverse(current, solve_link=False):
                 func = getattr(DB_UTIL, 'copy_{}'.format(x.__tablename__), None)
                 temp = func(x, new_parent)
-                # sess().add(temp)
                 result.append(temp)
                 stack.append(x)
 
         return ret
+
+    @classmethod
+    def make_atoms(cls, posix_path, parents=True):
+        component = posix_path.strip('/').split('/')
+        root = DB_UTIL.get_root()
+        result = [root]
+        current = root
+
+        for item in component:
+            up = current
+            current = next((x for x in DB_UTIL.traverse(current) if x.name == item), None)
+            if current is None:
+                if parents:
+                    current = ATOM(name=item, parent=up)
+                    sess().add(current)
+                else:
+                    result = None
+                    break
+
+            result.append(current)
+
+        return result
 
     @classmethod
     def walk(cls, orm, solve_link=True):
@@ -289,5 +333,7 @@ if __name__ == '__main__':
     # for x in  DB_UTIL.traverse(data1, solve_link=False):
     #     print x
 
-    k = DB_UTIL.deep_copy(a1, DB_UTIL.get_root())
-    sess().commit()
+    aa = DB_UTIL.goto('/1/2/3/4/5')
+    print aa[-1]
+
+    # time.sleep(20)

@@ -9,10 +9,10 @@ from DB_TABLE import *
 @DECO_SINGLETON()
 class DB_CONNECT(object):
     def __init__(self,
-                 # connection='sqlite:////Users/andyguo/Desktop/ssg.db',
+                 # connection='sqlite:////Users/guoxiaoao/Desktop/ssg.db',
                  connection='postgresql+psycopg2://postgres:More@TD_2017@core_db.more.com:5432/postgres',
                  echo=False,
-                 isolation_level='READ COMMITTED'):
+                 isolation_level='READ UNCOMMITTED'):
         self.connection = connection
         self.engine = create_engine(self.connection, echo=echo, isolation_level=isolation_level)
         self.smaker = sessionmaker(bind=self.engine)
@@ -35,9 +35,13 @@ class DB_CONNECT(object):
 
     def __call__(self, *args, **kwargs):
         if kwargs.get('new', False):
-            return self.smaker()
+            ss = self.smaker()
+            print '====== session {} ======'.format(id(ss))
+            return ss
         else:
-            return self.scope_smaker()
+            ss = self.scope_smaker()
+            print '====== session {} ======'.format(id(ss))
+            return ss
 
 
 sess = DB_CONNECT()
@@ -75,18 +79,22 @@ if __name__ == '__main__':
     #
     # sess().commit()
 
-    u1 = USER(name='guoxiaoao')
-    u2 = USER(name='test')
-
-    sess().add_all([u1, u2])
-    a1 = ATOM(name='aa')
-    d1 = DATA(name='111', thumbnail=QImage('/Users/guoxiaoao/Desktop/Screen Shot 2017-11-16 at 17.27.56.png'))
-    a1.datas.append(d1)
-    a1.datas.append(d1)
-    sess().add(a1)
-
-    sess().commit()
+    # u1 = USER(name='guoxiaoao')
+    # u2 = USER(name='test')
     #
+    # sess().add_all([u1, u2])
+    # a1 = ATOM(name='aa')
+    # d1 = DATA(name='111', thumbnail=QImage('/Users/guoxiaoao/Desktop/Screen Shot 2017-11-16 at 17.27.56.png'))
+    # a1.datas.append(d1)
+    # a1.datas.append(d1)
+    # sess().add(a1)
+    #
+    # sess().commit()
+    #
+
+    # data1 = sess().query(DATA).get('52c45b1c-cf39-11e7-8988-f832e47271c1')
+    # l1 = LINK(name=date1.name, parent=DBU)
+
     # dd = sess().query(DATA).first()
     # print dd
     # dd_t = dd.thumbnail

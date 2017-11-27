@@ -24,7 +24,7 @@ class DSLR_TRANSCODE(object):
         cmd_exists = lambda x: any(os.access(os.path.join(path, x), os.X_OK)
                                    for path in os.environ["PATH"].split(os.pathsep))
         if sys.platform != 'darwin' or not cmd_exists('sips') or not cmd_exists('mdls'):
-            raise Exception('not a Mac or Not install sips or cmls (built-in cmd)')
+            raise Exception('not a Mac or Not install sips or mdls (built-in cmd)')
         self.filename = dslr_file
 
     @DECO_LAZY

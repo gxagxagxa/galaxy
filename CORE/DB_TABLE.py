@@ -6,10 +6,6 @@ __author__ = 'andyguo'
 from DB_BASE import *
 
 
-# todo: data need size, atom
-
-
-
 class USER(DB_BASE, HAS_BASIC, HAS_TIMESTAMP, HAS_EXTRA, HAS_THUMBNAIL):
     name = Column(String, index=True)
 
@@ -110,6 +106,7 @@ def setup_listener(mapper, _class):
 
 class TAG(DB_BASE, HAS_BASIC, HAS_EXTRA, HAS_TIMESTAMP):
     name = Column(String, index=True)
+    color = Column(String(10))
 
     @property
     def children(self):

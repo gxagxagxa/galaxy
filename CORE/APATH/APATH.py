@@ -134,6 +134,31 @@ class APATH(Path):
                   for key, value in keys.items()]
         return result
 
+    def iter_scan(self, recursive=True):
+        if self.isdir():
+            for root, sub, files in os.walk(self):
+                keys = defaultdict(list)
+                for single in files:
+                    if single.startswith(tuple(IGNORE_SCAN_DICT['global']['start'])) \
+                            and not single.endswith(tuple(IGNORE_SCAN_DICT['global']['end'])):
+                        continue
+
+                    match = APATH.frame_regex.match(single)
+                    if match:
+                        replace_string = '%0{}d'.format(len(match.group(1)))
+                        key = root + '/' + single[:match.start(1)] + replace_string + single[match.end(1):]
+                        keys[key].append(int(match.group(1)))
+                    else:
+                        keys[root + '/' + single].append(-999)
+
+                for x, y in keys.items():
+                    yield {'filename': x,
+                           'frames'  : sorted(y),
+                           'missing' : sorted(set(range(y[0], y[-1] + 1)) - set(y))}
+
+        else:
+            raise Exception('iter_scan can only scan a folder')
+
     def scan(self, recursive=False):
         '''
         扫描。
@@ -200,7 +225,7 @@ if __name__ == '__main__':
     path6 = '/Volumes/x/cache/project_test/sequence/pl/pl_0010/element/comp/pl_0010_comp_master/pl_0010_comp_master_v0001/fullres/exr/pl_0010_comp_master_v0001.1001.exr'
     path7 = 'X:/Temp/guoxiaoao/publish/wkz-test/sequence/pl/pl_0010/dailies/ani/pl_0010_ani_muyr/pl_0010_ani_muyr_v0008/dpx/pl_0010_ani_muyr_v0008.%04d.dpx'
     path8 = '/Users/guoxiaoao/Desktop/test/WUK_s066_c0523_cmp_v004'
-    path8 = '/Users/guoxiaoao/Desktop/test/WUK_s066_c0523_cmp_v004/WUK_s066_c0523_cmp_v004.123.dpx'
+    path8 = '/Volumes/BACKUP/TEST_Footage/Footage'
     # test = MORE_PATH(path2)
     # print  test.version
     # print test.frame
@@ -218,10 +243,12 @@ if __name__ == '__main__':
     # print '/'.join(MORE_PATH(path5).parse.values()[:6])
 
 
-    workpath = APATH(path5)
+    workpath = APATH(path8)
 
-    if workpath.platform().is_legal() and workpath.artist:
-        values_index = workpath.parse.values().index(workpath.artist)
+    # print workpath.iter_scan()
+
+    for x in workpath.iter_scan():
+        print x
 
         # pprint(test.parse)
         # pprint(test.parse)

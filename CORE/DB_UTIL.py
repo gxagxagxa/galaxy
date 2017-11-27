@@ -36,13 +36,25 @@ class DB_UTIL(object):
 
     @classmethod
     def goto(cls, posix_path, relative_orm=None):
-        #need implement relative posix path, such as .. / .
-        root = DB_UTIL.get_root()
+        if posix_path.startswith('/'):
+            root = DB_UTIL.get_root()
+        else:
+            if relative_orm:
+                root = relative_orm
+            else:
+                raise Exception('using relative posix path, without giving relative orm')
+
         result = [root]
         component = posix_path.strip('/').split('/')
 
         current = root
         for item in component:
+            if item == '..':
+                current = current.parent
+
+            if item == '.':
+                pass
+
             current = next((x for x in DB_UTIL.traverse(current) if x.name == item), None)
             if current is None:
                 result = None
@@ -321,6 +333,7 @@ if __name__ == '__main__':
     # for x in  DB_UTIL.traverse(data1, solve_link=False):
     #     print x
 
-    k = DB_UTIL.make_atoms('/1/2/3/4/5')
-    sess().commit()
+    aa = DB_UTIL.goto('/1/2/3/4/5')
+    print aa[-1]
+
     # time.sleep(20)

@@ -12,7 +12,8 @@ from DECO import MY_CSS
 from GUI.WIDGETS.MToolButton import *
 from IMAGES import IMAGE_PATH
 from WIDGETS.MItemView import MListView
-
+from WIDGETS.MFilterEditor import MFilterEditor
+from WIDGETS.MInjectDataDialog import MInjectDataDialog
 
 class MDetailWidget(QWidget):
     def __init__(self, parent=None):
@@ -66,6 +67,10 @@ class MLeftWidget(QWidget):
             self.connect(button, SIGNAL('clicked()'), partial(self.slotFavorite, i + 1))
             self.favoriteListButton.append(button)
             mainLay.addWidget(button)
+
+        addFilterButton = QPushButton('+ Filter...')
+        self.connect(addFilterButton, SIGNAL('clicked()'), self.slotAddFilter)
+        mainLay.addWidget(addFilterButton)
         mainLay.addSpacing(10)
         mainLay.addWidget(lab2)
         for i in range(5):
@@ -95,6 +100,12 @@ class MLeftWidget(QWidget):
     @Slot(int)
     def slotTag(self, index):
         print 'slotTag', index
+
+    def slotAddFilter(self):
+        dialog = MFilterEditor(self)
+        # dialog.setWindowFlags(Qt.Dialog)
+        if dialog.exec_():
+            print dialog.getDataDict()
 
 
 class MMultiListViewWidget(QWidget):
@@ -131,7 +142,7 @@ class MMultiListViewWidget(QWidget):
     @Slot(MListView, object)
     def slotCurrentChanged(self, parentListView, parentORMs):
         parentORM = parentORMs
-        if len(parentORMs)>=1:
+        if isinstance(parentORMs, list) and len(parentORMs)>=1:
             parentORM = parentORMs[0]
 
         if isinstance(parentORM, LINK):
@@ -167,7 +178,10 @@ class MMultiListViewWidget(QWidget):
         if not newListView:
             newListView = MListView()
             self.connect(newListView, SIGNAL('sigSelectedChanged(PyObject)'), partial(self.slotCurrentChanged, newListView))
-            self.connect(newListView, SIGNAL('sigGoTo(object)'), self.slotGoTo)
+            self.connect(newListView, SIGNAL('sigGoTo(PyObject)'), self.slotGoTo)
+            self.connect(newListView, SIGNAL('sigGetFocus(PyObject)'), self.slotGetFocus)
+            self.connect(newListView, SIGNAL('sigDropFile(PyObject)'), partial(self.slotShowInjectDataDialog, newListView))
+
             parentListView.setChildListView(newListView)
             newListView.setParentListView(parentListView)
             self.listViewList.append(newListView)
@@ -175,6 +189,16 @@ class MMultiListViewWidget(QWidget):
         else:
             self.clearDownstreamListView(newListView)
         newListView.slotUpdate(parentORM)
+
+    @Slot(object)
+    def slotGetFocus(self, orm):
+        self.emit(SIGNAL('sigPathChanged(QString)'), DB_UTIL.hierarchy(orm, posix=True))
+
+    @Slot(list)
+    def slotShowInjectDataDialog(self, listView, fileList):
+        dialog = MInjectDataDialog(listView.parentORM, self)
+        dialog.slotAddFiles(fileList)
+        dialog.show()
 
     def clearDownstreamListView(self, startListView):
         child = startListView.childListView

@@ -1,0 +1,42 @@
+{
+  "injectTableView": {
+    "setting": {},
+    "headerList": [
+      {
+        "attr": "ui_name",
+        "name": "Name",
+        "width": 250,
+        "is_filter": true
+      },
+      {
+        "attr": "ui_start",
+        "name": "Start Frame",
+        "width": 90,
+        "is_searchable": false
+      },
+      {
+        "attr": "ui_end",
+        "name": "End Frame",
+        "width": 90,
+        "is_filter": true,
+        "is_searchable": true
+      },
+      {
+        "attr": "ui_count",
+        "width": 70,
+        "name": "Count",
+        "is_searchable": true
+      },
+      {
+        "attr": "ui_missing",
+        "width": 100,
+        "name": "Missing Frames"
+      },
+      {
+        "attr": "ui_path",
+        "width": 350,
+        "name": "Path"
+      }
+    ]
+  }
+}

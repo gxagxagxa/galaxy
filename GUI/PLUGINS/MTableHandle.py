@@ -133,7 +133,7 @@ class MTag(MTable):
 
     @classmethod
     def validateExist(cls, name, parentORM=None, attr='name'):
-        if sess.query(TAG).filter(TAG.name==name).all():
+        if sess().query(TAG).filter(TAG.name==name).all():
             return True
         else:
             return False

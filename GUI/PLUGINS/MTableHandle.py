@@ -122,3 +122,18 @@ class MData(MTable):
 
 class MLink(MTable):
     _nameRegExp = QRegExp("[a-z0-9\-\._]+")
+
+
+class MTag(MTable):
+    _nameRegExp = QRegExp("[a-z0-9\-\._]+")
+
+    @classmethod
+    def canDelete(cls, orm):
+        return True
+
+    @classmethod
+    def validateExist(cls, name, parentORM=None, attr='name'):
+        if sess.query(TAG).filter(TAG.name==name).all():
+            return True
+        else:
+            return False

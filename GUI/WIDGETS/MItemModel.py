@@ -50,6 +50,8 @@ class MTableModel(QAbstractTableModel):
             return Qt.ItemIsEnabled
         if self.headerList[index.column()].get('isEditable', False):
             return Qt.ItemFlags(QAbstractTableModel.flags(self, index) | Qt.ItemIsEditable)
+        elif self.headerList[index.column()].get('isCheckable', False):
+            return Qt.ItemFlags(QAbstractTableModel.flags(self, index) | Qt.ItemIsUserCheckable)
         else:
             return Qt.ItemFlags(QAbstractTableModel.flags(self, index))
 
@@ -194,9 +196,15 @@ class MTableModel(QAbstractTableModel):
 
         if role == Qt.ToolTipRole:
             return self.currentData(index)
+        if role == Qt.CheckStateRole and self.headerList[index.column()].get('isCheckable', False):
+            return getattr(self.getORM(index), 'checked', Qt.Unchecked)
         return None
 
     def setData(self, index, value, role=Qt.EditRole):
+        if role == Qt.CheckStateRole:
+            setattr(self.getORM(index), 'checked', value)
+            self.dataChanged.emit(index, index)
+
         if role != Qt.EditRole:
             return False
 

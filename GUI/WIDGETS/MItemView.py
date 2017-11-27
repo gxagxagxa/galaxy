@@ -256,6 +256,7 @@ class MListView(QListView):
         self.childListView = None
         self.parentListView = None
         self.sortFilterModel = QSortFilterProxyModel()
+        self.sortFilterModel.setFilterCaseSensitivity(Qt.CaseInsensitive)
         self.sortFilterModel.setSourceModel(self.realModel)
         self.setModel(self.sortFilterModel)
         self.setModelColumn(0)

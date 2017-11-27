@@ -244,11 +244,13 @@ class MListView(QListView):
     getCurrentItemData = _getCurrentItemData
     clear = _clear
     getAllItemsData = _getAllItemsData
-    def __init__(self, parent=None):
+    def __init__(self, headerList=None, parent=None):
         super(MListView, self).__init__(parent)
         self.parentORM = None
         self.realModel = MTableModel()
-        headerList = [
+
+        if headerList is None:
+            headerList = [
             {'attr': 'name', 'name': 'Name'}
         ]
         self.headerList = headerList
@@ -270,7 +272,7 @@ class MListView(QListView):
         self.realModel.setHeaders(headerList)
 
     def minimumSizeHint(self):
-        return QSize(200, 500)
+        return QSize(200, 50)
 
     def getSelectedItemsData(self):
         return [self.realModel.getORM(i) for i in self.getSelectedIndexes()]

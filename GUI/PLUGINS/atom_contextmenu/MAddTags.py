@@ -8,7 +8,7 @@
 
 from GUI.PLUGINS.MPluginBase import MPluginBase
 from GUI.PLUGINS.MTableHandle import *
-from GUI.WIDGETS.MTagListFrame import MChooseTagDialog
+from GUI.WIDGETS.MTagWidget import MChooseTagDialog
 
 class MAddTags(MPluginBase):
     name = 'Add Tags'

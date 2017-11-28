@@ -49,7 +49,38 @@ def _clear(self):
 def _getAllItemsData(self):
     return self.realModel.dataList[:]
 
+@Slot(QPoint)
+def _slotContextMenu(self, point):
+    if self.parentORM is None: return
+    cur = QCursor.pos()
+    proxyIndex = self.indexAt(point)
+    contextMenu = QMenu(self)
+    if proxyIndex.isValid():
+        dataORMList = self.getSelectedItemsData()
+        for plugin in MPluginManager.loadPlugins(self, 'itemview_contextmenu'):
+            event = {'parentWidget': self, 'orm': dataORMList}
+            if plugin.validate(event):
+                action = contextMenu.addAction(QIcon(IMAGE_PATH + '/' + plugin.icon), plugin.name)
+                self.connect(action, SIGNAL('triggered()'), partial(plugin.run, event))
+                if plugin.shortcut is not None:
+                    action.setShortcut(QKeySequence(plugin.shortcut))
+                if plugin.needRefresh:
+                    self.connect(plugin, SIGNAL('sigRefresh()'), partial(self.slotUpdate, self.parentORM))
+    else:
+        for plugin in MPluginManager.loadPlugins(self, 'itemview_empty_contextmenu'):
+            event = {'parentWidget': self, 'orm': self.parentORM}
+            if plugin.validate(event):
+                action = contextMenu.addAction(QIcon(IMAGE_PATH + '/' + plugin.icon), plugin.name)
+                self.connect(action, SIGNAL('triggered()'), partial(plugin.run, event))
+                if plugin.shortcut is not None:
+                    action.setShortcut(QKeySequence(plugin.shortcut))
+                if plugin.needRefresh:
+                    self.connect(plugin, SIGNAL('sigRefresh()'), partial(self.slotUpdate, self.parentORM))
+    contextMenu.exec_(cur)
 
+
+def _getSelectedItemsData(self):
+    return [self.realModel.getORM(i) for i in self.getSelectedIndexes()]
 
 class MHeaderView(QHeaderView):
     def __init__(self, orientation, parent=None):
@@ -118,9 +149,12 @@ class MTableView(QTableView):
     slotDoubleClicked = _slotDoubleClicked
     getCurrentIndex = _getCurrentIndex
     getSelectedIndexes = _getSelectedIndexes
+    getSelectedItemsData = _getSelectedItemsData
     getCurrentItemData = _getCurrentItemData
     clear = _clear
     getAllItemsData = _getAllItemsData
+    slotContextMenu = _slotContextMenu
+
     def __init__(self, headerList, parent=None):
         super(MTableView, self).__init__(parent)
         self.parentORM = None
@@ -170,19 +204,6 @@ class MTableView(QTableView):
         else:
             self.clear()
 
-    @Slot(QModelIndex, QModelIndex)
-    def slotCurrentItemChanged(self, currentIndex, before):
-        self.emit(SIGNAL('sigCurrentChanged(PyObject)'), self.getCurrentItemData())
-
-    @Slot(QItemSelection, QItemSelection)
-    def slotSelectedItemChanged(self, currentSelected, before):
-        self.emit(SIGNAL('sigSelectedChanged(PyObject)'), self.getSelectedItemsData())
-
-    @Slot(QModelIndex)
-    def slotDoubleClicked(self, index):
-        realIndex = self.sortFilterModel.mapToSource(index)
-        self.emit(SIGNAL('sigDoubleClicked(PyObject)'), self.realModel.getORM(realIndex))
-
     def setMenu(self):
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.connect(self, SIGNAL('customContextMenuRequested(const QPoint&)'),
@@ -195,36 +216,6 @@ class MTableView(QTableView):
                      self.slotSelectedItemChanged)
         self.connect(self, SIGNAL('doubleClicked(QModelIndex)'), self.slotDoubleClicked)
 
-    @Slot(QPoint)
-    def slotContextMenu(self, point):
-        cur = QCursor.pos()
-        proxyIndex = self.indexAt(point)
-        contextMenu = QMenu(self)
-        if proxyIndex.isValid():
-            realIndex = self.sortFilterModel.mapToSource(proxyIndex)
-            dataORM = self.realModel.getORM(realIndex)
-            event = '{table}_contextmenu'.format(table=getattr(dataORM, '__tablename__', None))
-            for plugin in MPluginManager.loadPlugins(self, event):
-                if plugin.validate({'orm': dataORM}):
-                    action = contextMenu.addAction(QIcon(IMAGE_PATH + '/' + plugin.icon), plugin.name)
-                    self.connect(action, SIGNAL('triggered()'),
-                                 partial(plugin.run, {'parentWidget': self, 'orm': dataORM}))
-                    if plugin.shortcut is not None:
-                        action.setShortcut(QKeySequence(plugin.shortcut))
-                    if plugin.needRefresh:
-                        self.connect(plugin, SIGNAL('sigRefresh()'), partial(self.slotUpdate, self.parentORM))
-        else:
-            event = '{table}_empty_contextmenu'.format(table=getattr(self.parentORM, '__tablename__', None))
-            for plugin in MPluginManager.loadPlugins(self, event):
-                if plugin.validate({'orm': self.parentORM}):
-                    action = contextMenu.addAction(QIcon(IMAGE_PATH + '/' + plugin.icon), plugin.name)
-                    self.connect(action, SIGNAL('triggered()'),
-                                 partial(plugin.run, {'parentWidget': self, 'orm': self.parentORM}))
-                    if plugin.shortcut is not None:
-                        action.setShortcut(QKeySequence(plugin.shortcut))
-                    if plugin.needRefresh:
-                        self.connect(plugin, SIGNAL('sigRefresh()'), partial(self.slotUpdate, self.parentORM))
-        contextMenu.exec_(cur)
 
 listViewSettingDict = {
     'reverse': False,
@@ -235,15 +226,19 @@ listViewSettingDict = {
     'displayAttr': 'name'
 }
 
+
 class MListView(QListView):
     slotCurrentItemChanged = _slotCurrentItemChanged
     slotSelectedItemChanged = _slotSelectedItemChanged
     slotDoubleClicked = _slotDoubleClicked
     getCurrentIndex = _getCurrentIndex
     getSelectedIndexes = _getSelectedIndexes
+    getSelectedItemsData = _getSelectedItemsData
     getCurrentItemData = _getCurrentItemData
     clear = _clear
     getAllItemsData = _getAllItemsData
+    slotContextMenu = _slotContextMenu
+
     def __init__(self, headerList=None, parent=None):
         super(MListView, self).__init__(parent)
         self.parentORM = None
@@ -251,8 +246,8 @@ class MListView(QListView):
 
         if headerList is None:
             headerList = [
-            {'attr': 'name', 'name': 'Name'}
-        ]
+                {'attr': 'name', 'name': 'Name'}
+            ]
         self.headerList = headerList
         self.setHeaderList(headerList)
         self.childListView = None
@@ -274,48 +269,11 @@ class MListView(QListView):
     def minimumSizeHint(self):
         return QSize(200, 50)
 
-    def getSelectedItemsData(self):
-        return [self.realModel.getORM(i) for i in self.getSelectedIndexes()]
-
     def setChildListView(self, widget):
         self.childListView = widget
 
     def setParentListView(self, widget):
         self.parentListView = widget
-
-    @Slot(QPoint)
-    def slotContextMenu(self, point):
-        cur = QCursor.pos()
-        proxyIndex = self.indexAt(point)
-        contextMenu = QMenu(self)
-        if proxyIndex.isValid():
-            ormList = self.getSelectedItemsData()
-            if not ormList:
-                realIndex = self.sortFilterModel.mapToSource(proxyIndex)
-                ormList = [self.realModel.getORM(realIndex)]
-            dataORM = ormList[0]
-            event = '{table}_contextmenu'.format(table=getattr(dataORM, '__tablename__', None))
-            for plugin in MPluginManager.loadPlugins(self, event):
-                if plugin.validate({'orm': ormList}):
-                    action = contextMenu.addAction(QIcon(IMAGE_PATH + '/' + plugin.icon), plugin.name)
-                    self.connect(action, SIGNAL('triggered()'),
-                                 partial(plugin.run, {'parentWidget': self, 'orm': ormList}))
-                    if plugin.shortcut is not None:
-                        action.setShortcut(QKeySequence(plugin.shortcut))
-                    if plugin.needRefresh:
-                        self.connect(plugin, SIGNAL('sigRefresh()'), partial(self.slotUpdate, self.parentORM))
-        else:
-            event = '{table}_empty_contextmenu'.format(table=getattr(self.parentORM, '__tablename__', None))
-            for plugin in MPluginManager.loadPlugins(self, event):
-                if plugin.validate({'orm': self.parentORM}):
-                    action = contextMenu.addAction(QIcon(IMAGE_PATH + '/' + plugin.icon), plugin.name)
-                    self.connect(action, SIGNAL('triggered()'),
-                                 partial(plugin.run, {'parentWidget': self, 'orm': self.parentORM}))
-                    if plugin.shortcut is not None:
-                        action.setShortcut(QKeySequence(plugin.shortcut))
-                    if plugin.needRefresh:
-                        self.connect(plugin, SIGNAL('sigRefresh()'), partial(self.slotUpdate, self.parentORM))
-        contextMenu.exec_(cur)
 
     def _getORMList(self, parentORM):
         return DB_UTIL.traverse(parentORM)

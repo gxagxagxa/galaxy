@@ -20,7 +20,8 @@ class MPluginBase(QObject):
         super(MPluginBase, self).__init__(parent)
 
     def run(self, event):
-        pass
+        if self.needRefresh:
+            self.emit(SIGNAL('sigRefresh()'))
 
     def validate(self, event):
         pass

@@ -81,6 +81,16 @@ class MHomeButton(MToolButton):
     _icon = 'icon-home.png'
 
 
+class MPreButton(MToolButton):
+    _toolTip = 'pre'
+    _icon = 'icon-pre.png'
+
+
+class MNextButton(MToolButton):
+    _toolTip = 'next'
+    _icon = 'icon-next.png'
+
+
 class MBigPictureButton(MToolButton):
     _toolTip = 'click_to_switch_to_big_picture_view_mode'
     _toolTip_unchecked = 'click_to_active'
@@ -93,6 +103,7 @@ class MTableViewButton(MToolButton):
     _toolTip_unchecked = 'click_to_active'
     _icon = 'icon-list-view.png'
     _icon_unchecked = 'icon-list-view-unchecked.png'
+
 
 class MMultiViewButton(MToolButton):
     _toolTip = 'click_to_switch_to_big_picture_view_mode'

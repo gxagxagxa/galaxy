@@ -11,8 +11,8 @@ from GUI.PLUGINS.MPluginBase import MPluginBase
 from GUI.PLUGINS.MTableHandle import *
 
 
-class MCopyAtom(MPluginBase):
-    name = 'Copy Folder'
+class MLink(MPluginBase):
+    name = 'Copy Link'
     icon = 'icon-edit.png'
     needRefresh = True
     shortcut = QKeySequence.Copy
@@ -20,7 +20,7 @@ class MCopyAtom(MPluginBase):
     def run(self, event):
         orm = event.get('orm')
         clipBoard = QApplication.clipboard()
-        clipBoard.setMimeData(mmd.createMimeData('copy', orm))
+        clipBoard.setMimeData(mmd.createMimeData('link', orm))
 
     def validate(self, event):
         return True

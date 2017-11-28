@@ -10,7 +10,7 @@ from GUI.PLUGINS.MPluginBase import MPluginBase
 from GUI.PLUGINS.MTableHandle import *
 
 
-class MGoToOrig(MPluginBase):
+class MGoToLinkOrig(MPluginBase):
     name = 'Go To Orig Object'
     icon = 'icon-edit.png'
     needRefresh = True
@@ -26,8 +26,8 @@ class MGoToOrig(MPluginBase):
             parentWidget.emit(SIGNAL('sigGoTo(object)'), targetORM)
 
     def validate(self, event):
-        orm = event.get('orm')
-        if len(orm) == 1:
+        ormList = event.get('orm')
+        if len(ormList) == 1 and isinstance(ormList[0], LINK):
             return True
         else:
             return False

@@ -12,7 +12,7 @@ from GUI.WIDGETS.MInputDialog import MInputDialog
 from GUI.PLUGINS.MTableHandle import *
 
 
-class MRenameAtom(MPluginBase):
+class MRename(MPluginBase):
     name = 'Rename Folder'
     icon = 'icon-edit.png'
     needRefresh = True
@@ -23,20 +23,24 @@ class MRenameAtom(MPluginBase):
         orm = event.get('orm')[0]
         result = True
         name = orm.name
+        handleObj = globals()['M{}'.format(orm.__tablename__.title())]
         while result:
-            name, result = MInputDialog.getText(parentWidget, 'New ATOM', 'Name:', name, MAtom._nameRegExp)
+            name, result = MInputDialog.getText(parentWidget, 'New Name', 'Name:', name, handleObj._nameRegExp)
             if result:
-                if MAtom.validateExist(name, orm.parent):
+                if handleObj.validateExist(name, orm.parent):
                     QMessageBox.critical(parentWidget, 'ERROR', 'This name exists.')
                     continue
                 else:
-                    MAtom.update(orm, name=name)
+                    try:
+                        handleObj.update(orm, name=name)
+                    except Exception as e:
+                        QMessageBox.critical(parentWidget, 'ERROR', 'Fail to Delete {}:{}\n{}'.format(orm.sid, orm.name, e))
                     self.emit(SIGNAL('sigRefresh()'))
                     break
 
     def validate(self, event):
-        orm = event.get('orm')
-        if len(orm) == 1:
+        ormLis = event.get('orm')
+        if len(ormLis) == 1:
             return True
         else:
             return False

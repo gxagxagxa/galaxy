@@ -11,16 +11,16 @@ from GUI.PLUGINS.MPluginBase import MPluginBase
 from GUI.PLUGINS.MTableHandle import *
 
 
-class MMoveAtom(MPluginBase):
-    name = 'Cut Folder'
-    icon = 'icon-edit.png'
+class MCut(MPluginBase):
+    name = 'Cut'
+    icon = 'icon-cut.png'
     needRefresh = True
     shortcut = QKeySequence.Cut
 
     def run(self, event):
-        orm = event.get('orm')
+        ormList = event.get('orm')
         clipBoard = QApplication.clipboard()
-        clipBoard.setMimeData(mmd.createMimeData('move', orm))
+        clipBoard.setMimeData(mmd.createMimeData('move', ormList))
 
     def validate(self, event):
         return True

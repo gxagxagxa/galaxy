@@ -11,10 +11,10 @@ from GUI.PLUGINS.MTableHandle import *
 from GUI.WIDGETS.MJobMonitor import MJobMonitor
 
 
-class MDownloadData(MPluginBase):
+class MDownload(MPluginBase):
     name = 'Download'
     icon = 'icon-download.png'
-    needRefresh = True
+    needRefresh = False
     shortcut = QKeySequence.Copy
 
     def run(self, event):
@@ -23,9 +23,12 @@ class MDownloadData(MPluginBase):
         folder = QFileDialog.getExistingDirectory(parentWidget, 'Save Folder', '', )
         if folder:
             #TODO: add job to db
+            #ormList 中有各种类型的 atom data raw link...
             dialog = MJobMonitor(parentWidget)
             if dialog.exec_():
                 QMessageBox.information(self, 'OK', 'SUCCESS')
+
+        super(MDownload, self).run(event)
 
     def validate(self, event):
         return True

@@ -109,7 +109,7 @@ class TAG(DB_BASE, HAS_BASIC, HAS_EXTRA, HAS_TIMESTAMP):
     color = Column(String(10))
 
     @property
-    def children(self):
+    def items(self):
         return {'atom': self.atoms,
                 'raw' : self.raws,
                 'data': self.datas}

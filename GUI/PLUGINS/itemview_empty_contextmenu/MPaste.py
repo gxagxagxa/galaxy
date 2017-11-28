@@ -12,7 +12,7 @@ import GUI.PLUGINS.MMimeData as mmd
 from CORE.DB_UTIL import *
 
 
-class MPasteAtom(MPluginBase):
+class MPaste(MPluginBase):
     name = 'Paste Folder'
     icon = 'icon-edit.png'
     needRefresh = True
@@ -59,6 +59,7 @@ class MPasteAtom(MPluginBase):
                 x.label = new_name
                 sess().commit()
 
+        super(MPaste, self).run(event)
         # print operator, currentORM.name, ormList.name
 
     def validate(self, event):

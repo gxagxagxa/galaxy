@@ -7,9 +7,8 @@
 ###################################################################
 
 from GUI.PLUGINS.MPluginBase import MPluginBase
-from GUI.QT import *
-from GUI.WIDGETS.MInputDialog import MInputDialog
 from GUI.PLUGINS.MTableHandle import *
+from GUI.WIDGETS.MInputDialog import MInputDialog
 
 
 class MAddAtom(MPluginBase):
@@ -30,8 +29,8 @@ class MAddAtom(MPluginBase):
                     continue
                 else:
                     MAtom.inject(name=name, parent=orm)
-                    self.emit(SIGNAL('sigRefresh()'))
-                    return
+                    break
+        super(MAddAtom, self).run(event)
 
     def validate(self, event):
         return True

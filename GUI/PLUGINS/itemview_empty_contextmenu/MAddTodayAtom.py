@@ -6,11 +6,11 @@
 # Email : muyanru345@163.com
 ###################################################################
 
-from GUI.PLUGINS.MPluginBase import MPluginBase
-from GUI.QT import *
-from GUI.WIDGETS.MInputDialog import MInputDialog
-from GUI.PLUGINS.MTableHandle import *
 import datetime as dd
+
+from GUI.PLUGINS.MPluginBase import MPluginBase
+from GUI.PLUGINS.MTableHandle import *
+
 
 class MAddTodayAtom(MPluginBase):
     name = 'Add Today Folder "%s"' % str(dd.date.today())
@@ -26,8 +26,9 @@ class MAddTodayAtom(MPluginBase):
             QMessageBox.critical(parentWidget, 'ERROR', 'This name exists.')
         else:
             MAtom.inject(name=name, parent=orm)
-            self.emit(SIGNAL('sigRefresh()'))
-            return
+        super(MAddTodayAtom, self).run(event)
+        return
+    
 
     def validate(self, event):
         return True

@@ -18,15 +18,13 @@ class MAddTags(MPluginBase):
 
     def run(self, event):
         cur = QCursor.pos()
-        ormList = event.get('orm')
+        orm = event.get('orm')
         parentWidget = event.get('parentWidget')
         dialog = MChooseTagDialog(parentWidget)
-        dialog.setTargetORM(ormList[0])
+        dialog.setTargetORMList([orm])
         dialog.move(cur + QPoint(-dialog.width(), 0))
         dialog.show()
+        super(MAddTags, self).run(event)
 
     def validate(self, event):
-        orm = event.get('orm')
-        if isinstance(orm, list) and len(orm) > 1:
-            return False
         return True

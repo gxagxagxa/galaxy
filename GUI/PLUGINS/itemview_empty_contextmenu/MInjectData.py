@@ -7,9 +7,9 @@
 ###################################################################
 
 from GUI.PLUGINS.MPluginBase import MPluginBase
-from GUI.QT import *
-from GUI.WIDGETS.MInjectDataDialog import MInjectDataDialog
 from GUI.PLUGINS.MTableHandle import *
+from GUI.WIDGETS.MInjectDataDialog import MInjectDataDialog
+
 
 class MInjectData(MPluginBase):
     name = 'Inject Data'
@@ -21,7 +21,7 @@ class MInjectData(MPluginBase):
         orm = event.get('orm')
         dialog = MInjectDataDialog(orm, parentWidget)
         dialog.exec_()
-        self.emit(SIGNAL('sigRefresh()'))
+        super(MInjectData, self).run(event)
         return
 
     def validate(self, event):

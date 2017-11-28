@@ -2,22 +2,22 @@
 # -*- coding: utf-8 -*-
 ###################################################################
 # Author: Mu yanru
-# Date  : 2017.7
+# Date  : 2017.11
 # Email : muyanru345@163.com
 ###################################################################
 
 from GUI.PLUGINS.MPluginBase import MPluginBase
-from GUI.PLUGINS.MTableHandle import *
-import GUI.PLUGINS.MMimeData as mmd
+from GUI.QT import *
 
-class MRefreshAtom(MPluginBase):
+
+class MRefresh(MPluginBase):
     name = 'Refresh'
     icon = 'icon-refresh.png'
     needRefresh = True
     shortcut = Qt.Key_F5
 
     def run(self, event):
-        self.emit(SIGNAL('sigRefresh()'))
+        super(MRefresh, self).run(event)
 
     def validate(self, event):
         return True

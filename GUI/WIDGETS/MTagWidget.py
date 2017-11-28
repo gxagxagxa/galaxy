@@ -184,7 +184,7 @@ class MChooseTagDialog(QDialog):
     def __init__(self, parent=None):
         super(MChooseTagDialog, self).__init__(parent)
         self.setWindowFlags(Qt.Popup | Qt.Dialog | Qt.FramelessWindowHint)
-        self.targetORM = None
+        self.targetORMList = None
         self.initUI()
 
     def initUI(self):
@@ -208,25 +208,28 @@ class MChooseTagDialog(QDialog):
 
         self.setLayout(mainLay)
 
-    def setTargetORM(self, orm):
-        self.targetORM = orm
+    def setTargetORM(self, ormList):
+        self.targetORMList = ormList
         self.refreshDataList()
 
     def refreshDataList(self):
-        existTags = self.targetORM.tags.all()
+        #TODO: handle ormList
+        existTags = self.targetORMList[0].tags.all()
         self.existTagListView.realModel.setDataList(existTags)
         self.dbTagListView.realModel.setDataList([tagORM for tagORM in sess().query(TAG).all() if tagORM not in existTags])
 
     @Slot(object)
     def slotMoveTag(self, tagORM):
-        self.targetORM.tags.remove(tagORM)
-        sess().commit()
+        for orm in self.targetORMList:
+            orm.tags.remove(tagORM)
+            sess().commit()
         self.refreshDataList()
 
     @Slot(object)
     def slotAddTag(self, tagORM):
-        self.targetORM.tags.append(tagORM)
-        sess().commit()
+        for orm in self.targetORMList:
+            orm.tags.append(tagORM)
+            sess().commit()
         self.refreshDataList()
 
 

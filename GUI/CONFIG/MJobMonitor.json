@@ -1,0 +1,45 @@
+{
+  "jobTable": {
+    "setting": {
+      "sortable": true
+    },
+    "header": [
+      {
+        "attr": "description",
+        "name": "Job Name",
+        "width": 250
+      },
+      {
+        "attr": "label",
+        "name": "Job Type",
+        "width": 150
+      },
+      {
+        "attr": "progress",
+        "name": "Progress",
+        "width": 80
+      },
+      {
+        "attr": "status",
+        "name": "Status",
+        "default_show": true,
+        "width": 80,
+        "is_filter": false
+      },
+      {
+        "attr": "created_time",
+        "name": "Created At",
+        "default_show": true,
+        "width": 150,
+        "is_filter": false
+      },
+      {
+        "attr": "updated_time",
+        "name": "Updated At",
+        "default_show": true,
+        "width": 150,
+        "is_filter": false
+      }
+    ]
+  }
+}

@@ -6,9 +6,11 @@ __author__ = 'andyguo'
 import os
 import sys
 import multiprocessing as mp
+import subprocess
 from functools import partial
 from itertools import izip
 import time
+import re
 
 # buffer size default is 4M
 BLOCKSIZE = 4096 * 1024
@@ -107,8 +109,38 @@ class MULTI_COPY(object):
         print self.total_size, self.file_size.value, self.percent
 
 
+class RSYNC_COPY(object):
+    def __init__(self, num_process=4):
+        self.done = False
+        self.percent = 0.0
+
+    def run(self, from_files, to_files, file_size=None, param='ar'):
+        self.done = False
+        percent_regex = re.compile(r'.*?([\d\.]+%)')
+        cmd = u'rsync -{} --info=progress2 {} {}'.format(param,
+                                                         u' '.join(from_files),
+                                                         u' '.join(to_files))
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True, universal_newlines=True)
+        while True:
+            output = p.stdout.readline()
+            if output == '' and p.poll() is not None:
+                break
+            if output:
+                output_string = output.strip()
+                match = percent_regex.match(output_string)
+                if match:
+                    # print match.groups()
+                    self.percent = float(match.groups()[0][:-1])
+
+        rc = p.poll()
+        p.wait()
+
+        self.done = True
+        self.percent = 100.0
+
+
 if __name__ == '__main__':
-    test = MULTI_COPY(4)
+    test = RSYNC_COPY(4)
     from unipath import Path
     import threading as mt
     import time
@@ -116,7 +148,9 @@ if __name__ == '__main__':
     src = list(Path('/Users/guoxiaoao/Desktop/TEMP/Footage').walk())
     dst = [x.replace('/Users/guoxiaoao/Desktop/TEMP/Footage', '/Volumes/ORACLE/Temp/other/guoxiaoao/2') for x in src]
 
-    sub_process = mt.Thread(target=test.run, args=(src, dst))
+    sub_process = mt.Thread(target=test.run, args=(
+        ['/Volumes/BACKUP/TEST_Footage/Footage/R3D/offical/epicdragon-h2o-6k-ff-72fps'],
+        ['/Users/guoxiaoao/Desktop/TEMP/2']))
     sub_process.start()
 
     while not test.done:

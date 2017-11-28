@@ -13,7 +13,7 @@ from MItemView import MTableView
 from CORE.DB_UTIL import *
 from CORE.APATH import APATH
 from GUI.CONFIG import MInjectDataConfigFunc
-
+from MJobMonitor import MJobMonitor
 
 class MInjectDataDialog(QDialog):
     def __init__(self, orm, parent=None):
@@ -110,6 +110,11 @@ class MInjectDataDialog(QDialog):
         #TODO: 首先校验一下是否跟数据库已有的data有重复
         #TODO: 然后将这些文件们入库
         print self.resultTableView.getAllItemsData()
+        dialog = MJobMonitor(self)
+        if dialog.exec_():
+            QMessageBox.information(self, 'OK', 'SUCCESS')
+            self.close()
+
 
 
 if __name__ == '__main__':

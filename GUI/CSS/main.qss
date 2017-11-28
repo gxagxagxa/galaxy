@@ -227,6 +227,9 @@ QToolButton{
     color:#E1E1E1;
     padding: 0;
 }
+QToolButton:hover{
+    border: 1px solid #f7931e ;
+}
 QToolButton:disabled{
     background-color: #8f8f8f;
 }

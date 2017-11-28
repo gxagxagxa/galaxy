@@ -167,6 +167,7 @@ class MTableModel(QAbstractTableModel):
                 return QBrush(QColor(ODD_ROW_COLOR))
 
         if role == Qt.DecorationRole:
+            #TODO: refactor here!
             if index.column() == 0:
                 try:
                     dataORM = self.getORM(index)
@@ -189,7 +190,15 @@ class MTableModel(QAbstractTableModel):
                                                                                '__tablename__') else dataORM.get('type')
                         if keyName == 'link': keyName = '%slink' % dataORM.target_table
                         if not ICON_DICT.has_key(keyName):
-                            ICON_DICT[keyName] = QIcon('%s/icon-%s.png' % (IMAGE_PATH, keyName))
+                            if hasattr(dataORM, 'color'):
+                                pix = QPixmap('%s/icon-%s.png' % (IMAGE_PATH, keyName))
+                                mask = pix.mask()
+                                pix.fill(QColor(getattr(dataORM, 'color')))
+                                pix.setMask(mask)
+                                keyName +=  getattr(dataORM, 'color')
+                                ICON_DICT[keyName] = QIcon(pix)
+                            else:
+                                ICON_DICT[keyName] = QIcon('%s/icon-%s.png' % (IMAGE_PATH, keyName))
                         return ICON_DICT.get(keyName)
                 except:
                     return None

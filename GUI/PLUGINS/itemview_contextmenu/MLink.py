@@ -12,8 +12,8 @@ from GUI.PLUGINS.MTableHandle import *
 
 
 class MLink(MPluginBase):
-    name = 'Copy Link'
-    icon = 'icon-edit.png'
+    name = 'Link'
+    icon = 'icon-link.png'
     needRefresh = True
     shortcut = QKeySequence.Copy
 

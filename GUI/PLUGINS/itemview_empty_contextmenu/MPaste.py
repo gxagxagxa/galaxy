@@ -13,8 +13,8 @@ from CORE.DB_UTIL import *
 from GUI.WIDGETS.MReplaceOrSkipDialog import MReplaceOrSkipDialog
 
 class MPaste(MPluginBase):
-    name = 'Paste Folder'
-    icon = 'icon-edit.png'
+    name = 'Paste'
+    icon = 'icon-paste.png'
     needRefresh = True
     shortcut = QKeySequence.Paste
 

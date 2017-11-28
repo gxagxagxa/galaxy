@@ -14,6 +14,15 @@ from IMAGES import IMAGE_PATH
 from WIDGETS.MItemView import MListView
 from WIDGETS.MFilterEditor import MFilterEditor
 from WIDGETS.MInjectDataDialog import MInjectDataDialog
+from WIDGETS.MTagWidget import MTagEditDialog
+
+
+class MHSeparator(QFrame):
+    def __init__(self, parent=None):
+        super(MHSeparator, self).__init__(parent)
+        self.setFrameShape(QFrame.HLine)
+        self.setFrameShadow(QFrame.Sunken)
+
 
 class MDetailWidget(QWidget):
     def __init__(self, parent=None):
@@ -60,34 +69,57 @@ class MLeftWidget(QWidget):
         self.sharedListButton = []
         self.tagsListButton = []
 
+        rootButton = QToolButton()
+        rootButton.setText('< Root View >')
+        self.connect(rootButton, SIGNAL('clicked()'), self.slotRoot)
+
         mainLay = QVBoxLayout()
+        mainLay.addWidget(rootButton)
+        mainLay.addWidget(MHSeparator())
         mainLay.addWidget(lab1)
         for i in range(5):
-            button = QPushButton('My Filter %d' % (i + 1))
+            button = QToolButton()
+            button.setText('My Filter %d' % (i + 1))
             self.connect(button, SIGNAL('clicked()'), partial(self.slotFavorite, i + 1))
             self.favoriteListButton.append(button)
             mainLay.addWidget(button)
 
-        addFilterButton = QPushButton('+ Filter...')
+        addFilterButton = QToolButton()
+        addFilterButton.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        addFilterButton.setText('Filter...')
+        addFilterButton.setIcon(QIcon('{}/icon-add.png'.format(IMAGE_PATH)))
         self.connect(addFilterButton, SIGNAL('clicked()'), self.slotAddFilter)
         mainLay.addWidget(addFilterButton)
         mainLay.addSpacing(10)
+        mainLay.addWidget(MHSeparator())
         mainLay.addWidget(lab2)
         for i in range(5):
-            button = QPushButton('Share %d' % (i + 1))
+            button = QToolButton()
+            button.setText('Share %d' % (i + 1))
             self.connect(button, SIGNAL('clicked()'), partial(self.slotShare, i + 1))
             self.sharedListButton.append(button)
             mainLay.addWidget(button)
         mainLay.addSpacing(10)
+        mainLay.addWidget(MHSeparator())
         mainLay.addWidget(lab3)
-        for i in range(5):
-            button = QPushButton('Tag %d' % (i + 1))
-            self.connect(button, SIGNAL('clicked()'), partial(self.slotTag, i + 1))
+        for tagORM in sess().query(TAG).all():
+            pix = QPixmap('%s/icon-%s.png' % (IMAGE_PATH, 'tag'))
+            mask = pix.mask()
+            pix.fill(QColor(getattr(tagORM, 'color')))
+            pix.setMask(mask)
+            button = QToolButton()
+            button.setIcon(QIcon(pix))
+            button.setText(tagORM.name)
+            button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            self.connect(button, SIGNAL('clicked()'), partial(self.slotTag, tagORM))
             self.tagsListButton.append(button)
             mainLay.addWidget(button)
 
         mainLay.addStretch()
         self.setLayout(mainLay)
+
+    def slotRoot(self):
+        self.emit(SIGNAL('sigShowRoot()'))
 
     @Slot(int)
     def slotFavorite(self, index):
@@ -97,9 +129,9 @@ class MLeftWidget(QWidget):
     def slotShare(self, index):
         print 'slotShare', index
 
-    @Slot(int)
-    def slotTag(self, index):
-        print 'slotTag', index
+    @Slot(object)
+    def slotTag(self, tagORM):
+        self.emit(SIGNAL('sigShowTag(PyObject)'), tagORM)
 
     def slotAddFilter(self):
         dialog = MFilterEditor(self)
@@ -121,8 +153,9 @@ class MMultiListViewWidget(QWidget):
         self.detailWidget = MDetailWidget()
         self.detailWidget.setVisible(False)
 
-        self.connect(self.rootListView, SIGNAL('sigSelectedChanged(PyObject)'), partial(self.slotCurrentChanged, self.rootListView))
-        self.connect(self.rootListView, SIGNAL('sigGoTo(object)'), self.slotGoTo)
+        self.connect(self.rootListView, SIGNAL('sigSelectedChanged(PyObject)'),
+                     partial(self.slotCurrentChanged, self.rootListView))
+        self.connect(self.rootListView, SIGNAL('sigGoTo(object)'), SIGNAL('sigGoTo(object)'))
         self.splitter.addWidget(self.rootListView)
         self.splitter.addWidget(self.detailWidget)
         self.scrollArea.setWidget(self.splitter)
@@ -130,19 +163,21 @@ class MMultiListViewWidget(QWidget):
         mainLay.addWidget(self.scrollArea)
         self.setLayout(mainLay)
 
-        self.rootListView.slotUpdate(DB_UTIL.get_root())
-
     def slotScroll2Right(self, a, b):
         self.scrollArea.horizontalScrollBar().setValue(b)
 
     def slotGoTo(self, targetORM):
-        #TODO: go to path
-        print 'slotGoTo', DB_UTIL.hierarchy(targetORM, posix=True)
+        # self.rootListView.slotUpdate(DB_UTIL.get_root())
+        ormList = DB_UTIL.hierarchy(targetORM, posix=False)
+        listView = self.rootListView
+        for orm in ormList:
+            listView.setCurrentItemData(orm)
+            listView = listView.childListView
 
     @Slot(MListView, object)
     def slotCurrentChanged(self, parentListView, parentORMs):
         parentORM = parentORMs
-        if isinstance(parentORMs, list) and len(parentORMs)>=1:
+        if isinstance(parentORMs, list) and len(parentORMs) >= 1:
             parentORM = parentORMs[0]
 
         if isinstance(parentORM, LINK):
@@ -177,10 +212,12 @@ class MMultiListViewWidget(QWidget):
         newListView = parentListView.childListView
         if not newListView:
             newListView = MListView()
-            self.connect(newListView, SIGNAL('sigSelectedChanged(PyObject)'), partial(self.slotCurrentChanged, newListView))
+            self.connect(newListView, SIGNAL('sigSelectedChanged(PyObject)'),
+                         partial(self.slotCurrentChanged, newListView))
             self.connect(newListView, SIGNAL('sigGoTo(PyObject)'), self.slotGoTo)
             self.connect(newListView, SIGNAL('sigGetFocus(PyObject)'), self.slotGetFocus)
-            self.connect(newListView, SIGNAL('sigDropFile(PyObject)'), partial(self.slotShowInjectDataDialog, newListView))
+            self.connect(newListView, SIGNAL('sigDropFile(PyObject)'),
+                         partial(self.slotShowInjectDataDialog, newListView))
 
             parentListView.setChildListView(newListView)
             newListView.setParentListView(parentListView)
@@ -211,18 +248,15 @@ class MMultiListViewWidget(QWidget):
         if isinstance(listView, MListView):
             return listView
         else:
-            for i in range(len(self.listViewList)-1, -1, -1):
+            for i in range(len(self.listViewList) - 1, -1, -1):
                 tempView = self.listViewList[i]
                 if tempView.getAllItemsData():
                     return tempView
         return None
-        # for i in range(self.splitter.count()):
-        #     listView = self.splitter.widget(i)
-        #     if listView.hasFocus():
-        #         if listView.getAllItemsData():
-        #             return listView
-        #         else:
-        #             return listView.parentListView
+
+    def slotSwitchTo(self, path):
+        orm = DB_UTIL.goto(path)[-1]
+        self.slotGoTo(orm)
 
 
 class MBigPictureViewWidget(QWidget):
@@ -234,7 +268,7 @@ class MBigPictureViewWidget(QWidget):
         self.listView = MListView()
         self.listView.setViewMode(QListView.IconMode)
         self.listView.setResizeMode(QListView.Adjust)
-        self.listView.setUniformItemSizes(True)
+        self.listView.setUniformItemSizes(False)
         self.listView.setMovement(QListView.Static)
         self.listView.setSpacing(10)
         self.listView.setIconSize(QSize(160, 160))
@@ -245,6 +279,14 @@ class MBigPictureViewWidget(QWidget):
 
     def currentListView(self):
         return self.listView
+
+    def slotGoTo(self, targetORM):
+        self.listView.slotUpdate(targetORM.parent)
+        self.listView.setCurrentItemData(targetORM)
+
+    def slotSwitchTo(self, path):
+        orm = DB_UTIL.goto(path)[-1]
+        self.listView.slotUpdate(orm.parent)
 
 # class MTableViewWidget(QWidget):
 #     def __init__(self, parent=None):
@@ -293,6 +335,7 @@ class MFinder(QMainWindow):
         self.setWindowTitle('Finder')
         self.listViewList = []
         self.initUI()
+        self.slotShowRootView()
 
     def initUI(self):
         self.leftWidget = MLeftWidget()
@@ -300,7 +343,10 @@ class MFinder(QMainWindow):
         self.multiViewWidget = MMultiListViewWidget()
         self.bigPictureViewWidget = MBigPictureViewWidget()
         self.connect(self.multiViewWidget, SIGNAL('sigPathChanged(QString)'), self.slotSetWindowTitle)
+        self.connect(self.multiViewWidget, SIGNAL('sigGoTo(object)'), self.slotGoToNewFinder)
         self.connect(self.bigPictureViewWidget, SIGNAL('sigPathChanged(QString)'), self.slotSetWindowTitle)
+        self.connect(self.leftWidget, SIGNAL('sigShowTag(PyObject)'), self.slotShowTagChildren)
+        self.connect(self.leftWidget, SIGNAL('sigShowRoot()'), self.slotShowRootView)
         # self.tableViewWidget = MTableViewWidget()
 
         self.stackWidget.addWidget(self.multiViewWidget)
@@ -324,10 +370,36 @@ class MFinder(QMainWindow):
     def createActions(self):
         self.newAct = QAction(QIcon('%s/%s' % (IMAGE_PATH, 'icon-add.png')), "&New",
                               self, shortcut=QKeySequence.New,
-                              statusTip="Create a new file", triggered=self.newFinder)
+                              statusTip="Create a new file", triggered=self.slotNewFinder)
+        self.tagAct = QAction(QIcon('%s/%s' % (IMAGE_PATH, 'icon-tag.png')), "Tag Manager",
+                              self, shortcut=QKeySequence(Qt.Key_K),
+                              statusTip="Open Tag Manager", triggered=self.slotShowTagManager)
+        self.copyAct = QAction(QIcon('%s/%s' % (IMAGE_PATH, 'icon-copy.png')), "Copy",
+                               self, shortcut=QKeySequence.Copy,
+                               statusTip="Copy Current Selected", triggered=self.slotCopy)
+        self.cutAct = QAction(QIcon('%s/%s' % (IMAGE_PATH, 'icon-cut.png')), "Cut",
+                              self, shortcut=QKeySequence.Cut,
+                              statusTip="Cut Current Selected", triggered=self.slotCut)
+        self.linkAct = QAction(QIcon('%s/%s' % (IMAGE_PATH, 'icon-link.png')), "Link",
+                               self, shortcut=QKeySequence('ctrl+l'),
+                               statusTip="Link Current Selected", triggered=self.slotLink)
+        self.pasteAct = QAction(QIcon('%s/%s' % (IMAGE_PATH, 'icon-paste.png')), "Paste",
+                                self, shortcut=QKeySequence.Paste,
+                                statusTip="Link Current Selected", triggered=self.slotPaste)
 
-    def newFinder(self):
+    @Slot()
+    def slotNewFinder(self):
         other = MFinder()
+        MFinder.windowList.append(other)
+        other.move(self.x() + 40, self.y() + 40)
+        other.show()
+
+    @Slot(object)
+    def slotGoToNewFinder(self, targetORM):
+        other = MFinder()
+        other.stackWidget.setCurrentIndex(self.stackWidget.currentIndex())
+        listView = other.stackWidget.currentWidget()
+        listView.slotGoTo(targetORM)
         MFinder.windowList.append(other)
         other.move(self.x() + 40, self.y() + 40)
         other.show()
@@ -335,15 +407,20 @@ class MFinder(QMainWindow):
     def createMenus(self):
         self.fileMenu = self.menuBar().addMenu("&File")
         self.fileMenu.addAction(self.newAct)
+        self.fileMenu.addAction(self.tagAct)
+        self.editMenu = self.menuBar().addMenu("&Edit")
+        self.editMenu.addAction(self.copyAct)
+        self.editMenu.addAction(self.cutAct)
+        self.editMenu.addAction(self.pasteAct)
+        self.editMenu.addAction(self.linkAct)
 
     def createToolBars(self):
         self.fileToolBar = self.addToolBar("File")
         self.fileToolBar.setFloatable(False)
         self.fileToolBar.setMovable(False)
-        self.fileToolBar.addAction(self.newAct)
 
-        self.preButton = QPushButton('<')
-        self.nextButton = QPushButton('>')
+        self.preButton = MPreButton()
+        self.nextButton = MNextButton()
 
         self.bigPictureButton = MBigPictureButton(checkable=True)
         self.multiViewButton = MMultiViewButton(checkable=True)
@@ -358,6 +435,14 @@ class MFinder(QMainWindow):
 
         self.searchLineEdit = QLineEdit()
 
+        self.fileToolBar.addAction(self.newAct)
+        self.fileToolBar.addAction(self.tagAct)
+        self.fileToolBar.addSeparator()
+        self.fileToolBar.addAction(self.copyAct)
+        self.fileToolBar.addAction(self.cutAct)
+        self.fileToolBar.addAction(self.pasteAct)
+        self.fileToolBar.addAction(self.linkAct)
+        self.fileToolBar.addSeparator()
         self.fileToolBar.addWidget(self.preButton)
         self.fileToolBar.addWidget(self.nextButton)
         self.fileToolBar.addSeparator()
@@ -368,13 +453,39 @@ class MFinder(QMainWindow):
 
     def slotClipboardDataChanged(self):
         md = QApplication.clipboard().mimeData()
-        print md
 
     def slotSwitchViewMode(self, index):
-        currentView = self.stackWidget.currentWidget().currentListView()
         self.stackWidget.setCurrentIndex(index)
-        # if index
+        self.stackWidget.currentWidget().slotSwitchTo(self.windowTitle())
 
+    @Slot()
+    def slotCopy(self):
+        pass
+
+    @Slot()
+    def slotCut(self):
+        pass
+
+    @Slot()
+    def slotPaste(self):
+        pass
+
+    @Slot()
+    def slotLink(self):
+        pass
+
+    @Slot()
+    def slotShowTagManager(self):
+        test = MTagEditDialog(self)
+        test.show()
+
+    @Slot(object)
+    def slotShowTagChildren(self, tagORM):
+        self.multiViewWidget.rootListView.slotUpdate(tagORM)
+
+    @Slot()
+    def slotShowRootView(self):
+        self.multiViewWidget.rootListView.slotUpdate(DB_UTIL.get_root())
 
     @Slot(int)
     def slotCurrentModeChanged(self, index):

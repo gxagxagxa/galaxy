@@ -24,7 +24,7 @@ def getTextColor(backgroundColor):
 class MTagEditDialog(QDialog):
     def __init__(self, parent=None):
         super(MTagEditDialog, self).__init__(parent)
-        self.setWindowTitle(self.tr('edit_tag'))
+        self.setWindowTitle('Tag Manager')
         self.initUI()
         self.refreshData()
 

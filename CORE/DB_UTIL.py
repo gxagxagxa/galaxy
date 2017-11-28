@@ -228,7 +228,7 @@ class DB_UTIL(object):
             if (not solve_link) and isinstance(orm, LINK):
                 return []
 
-            if isinstance(orm, (ATOM, LINK)):
+            if isinstance(orm, (ATOM, LINK, TAG, VIEW)):
                 return chain(*[value for value in orm.items.values()])
             elif isinstance(orm, (DATA, RAW)):
                 return []

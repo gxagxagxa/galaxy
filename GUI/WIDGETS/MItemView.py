@@ -317,3 +317,8 @@ class MListView(QListView):
     def dropEvent(self, event):
         fileList = [url.toLocalFile() for url in event.mimeData().urls()]
         self.emit(SIGNAL('sigDropFile(PyObject)'), fileList)
+
+    def setCurrentItemData(self, orm):
+        for row, dataORM in enumerate(self.realModel.dataList):
+            if dataORM.sid == orm.sid:
+                return self.setCurrentIndex(self.sortFilterModel.mapFromSource(self.realModel.index(row, 0)))

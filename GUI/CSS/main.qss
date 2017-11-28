@@ -224,6 +224,7 @@ QPushButton#plus{
 /* =======================< QToolButton >=========================*/
 QToolButton{
     background-color:transparent;
+    color:#E1E1E1;
     padding: 0;
 }
 QToolButton:disabled{

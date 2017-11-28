@@ -208,7 +208,7 @@ class MChooseTagDialog(QDialog):
 
         self.setLayout(mainLay)
 
-    def setTargetORM(self, ormList):
+    def setTargetORMList(self, ormList):
         self.targetORMList = ormList
         self.refreshDataList()
 

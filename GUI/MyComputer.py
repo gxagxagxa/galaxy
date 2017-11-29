@@ -118,7 +118,7 @@ class MLeftWidget(QWidget):
 
     def updateFilterList(self):
         self.filterListWidget.clear()
-        for filterORM in sess().query(SEARCH).filter(SEARCH.created_by_name == 'muyanru').all():
+        for filterORM in sess().query(SEARCH).filter(SEARCH.created_by_name == CURRENT_USER_NAME).all():
             item = QListWidgetItem(filterORM.name)
             item.setData(Qt.UserRole, filterORM)
             self.filterListWidget.addItem(item)
@@ -126,7 +126,7 @@ class MLeftWidget(QWidget):
     def updateViewList(self):
         # TODO: show view
         self.viewListWidget.clear()
-        for filterORM in sess().query(SEARCH).filter(SEARCH.created_by_name == 'muyanru').all():
+        for filterORM in sess().query(SEARCH).filter(SEARCH.created_by_name == CURRENT_USER_NAME).all():
             item = QListWidgetItem(filterORM.name)
             item.setData(Qt.UserRole, filterORM)
             self.viewListWidget.addItem(item)

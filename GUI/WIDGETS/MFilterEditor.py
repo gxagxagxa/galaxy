@@ -64,6 +64,7 @@ class MFilterEditor(QDialog):
 
     def getDataDict(self):
         dataDict = {'name': self.filterNameLineEdit.text(),
+                    'target': self.filterGrp.tableComboBox.currentText(),
                     'mode': self.filterGrp.conditionComboBox.currentText(),
                     'filters': self.filterGrp.filterSet.getFilterDataList()}
         return dataDict
@@ -170,10 +171,14 @@ class MFilterItem(QWidget):
         self.setLayout(mainLay)
 
     def initData(self):
-        attrList = [{'name': 'Name', 'type': MValueType.Text},
-                    {'name': 'Created By', 'type': MValueType.Entity},
-                    {'name': 'Created At', 'type': MValueType.Date},
-                    {'name': 'Age', 'type': MValueType.Number}
+        attrList = [{'name': 'Name', 'type': MValueType.Text,
+                     'op': ['is', 'is not', 'startswith', 'endswith', 'contain']},
+                    {'name': 'Size', 'type': MValueType.Number,
+                     'op': ['is', 'is not', 'is greater than', 'is less than', 'is in the range']},
+                    {'name': 'Created By', 'type': MValueType.Entity,
+                     'op': ['is', 'is not']},
+                    {'name': 'Created At', 'type': MValueType.Date,
+                     'op': ['is', 'is not', 'is before', 'is after']},
                     ]
         for attr in attrList:
             self.attrComboBox.addItem(attr.get('name'), attr)
@@ -181,10 +186,12 @@ class MFilterItem(QWidget):
     def slotAttrChanged(self, index):
         itemData = self.attrComboBox.itemData(index)
         self.valueWidget.setType(itemData.get('type'))
+        self.opComboBox.clear()
+        self.opComboBox.addItems(itemData.get('op'))
+        self.opComboBox.setSizeAdjustPolicy(QComboBox.AdjustToContents)
 
     def slotOpChanged(self, index):
         itemData = self.opComboBox.itemData(index)
-        print itemData
 
     def slotRemove(self):
         self.emit(SIGNAL('sigRemove()'))

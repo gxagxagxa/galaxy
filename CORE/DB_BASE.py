@@ -55,8 +55,8 @@ class HAS_BASIC(object):
 
 
 class HAS_TIMESTAMP(object):
-    date_created_time = Column(Date, default=pydate.today())
-    date_updated_time = Column(Date, onupdate=pydate.today())
+    data_created_time = Column(Date, default=pydate.today())
+    data_updated_time = Column(Date, onupdate=pydate.today())
 
     @declared_attr
     def db_created_time(cls):

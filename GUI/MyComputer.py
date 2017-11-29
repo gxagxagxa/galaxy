@@ -266,7 +266,7 @@ class MMultiListViewWidget(QWidget):
     def slotGetFocus(self, orm):
         self.emit(SIGNAL('sigPathChanged(QString)'), DB_UTIL.hierarchy(orm, posix=True))
 
-    @Slot(list)
+    @Slot(MListView, list)
     def slotShowInjectDataDialog(self, listView, fileList):
         dialog = MInjectDataDialog(listView.parentORM, self)
         dialog.slotAddFiles(fileList)

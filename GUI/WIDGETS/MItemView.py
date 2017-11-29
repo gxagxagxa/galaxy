@@ -6,6 +6,8 @@
 ###################################################################
 
 from functools import partial
+import sys
+import subprocess
 
 from GUI.IMAGES import IMAGE_PATH
 from GUI.PLUGINS import MPluginManager
@@ -49,9 +51,11 @@ def _clear(self):
 def _getAllItemsData(self):
     return self.realModel.dataList[:]
 
+
 @Slot(QPoint)
 def _slotContextMenu(self, point):
-    if self.parentORM is None: return
+    if self.parentORM is None:
+        return
     cur = QCursor.pos()
     proxyIndex = self.indexAt(point)
     contextMenu = QMenu(self)
@@ -81,6 +85,7 @@ def _slotContextMenu(self, point):
 
 def _getSelectedItemsData(self):
     return [self.realModel.getORM(i) for i in self.getSelectedIndexes()]
+
 
 class MHeaderView(QHeaderView):
     def __init__(self, orientation, parent=None):
@@ -178,11 +183,13 @@ class MTableView(QTableView):
         self.resizeHeaders(headerList)
 
     def setHeaderList(self, headerList):
-        if not headerList: return
+        if not headerList:
+            return
         self.realModel.setHeaders(headerList)
 
     def resizeHeaders(self, headerList):
-        if not headerList: return
+        if not headerList:
+            return
         for index, i in enumerate(headerList):
             self._headerView.setSectionHidden(index, not i.get('default_show', True))
             self._headerView.resizeSection(index, i.get('width', 100))
@@ -218,12 +225,12 @@ class MTableView(QTableView):
 
 
 listViewSettingDict = {
-    'reverse': False,
-    'filterable': False,
-    'menu': False,
+    'reverse'          : False,
+    'filterable'       : False,
+    'menu'             : False,
     'selectionBehavior': QAbstractItemView.SelectRows,
-    'selectionMode': QAbstractItemView.ContiguousSelection,
-    'displayAttr': 'name'
+    'selectionMode'    : QAbstractItemView.ContiguousSelection,
+    'displayAttr'      : 'name'
 }
 
 
@@ -263,7 +270,8 @@ class MListView(QListView):
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
 
     def setHeaderList(self, headerList):
-        if not headerList: return
+        if not headerList:
+            return
         self.realModel.setHeaders(headerList)
 
     def minimumSizeHint(self):
@@ -316,7 +324,20 @@ class MListView(QListView):
 
     def dropEvent(self, event):
         fileList = [url.toLocalFile() for url in event.mimeData().urls()]
-        self.emit(SIGNAL('sigDropFile(PyObject)'), fileList)
+        result = []
+        if sys.platform == 'darwin':
+            for url in fileList:
+                p = subprocess.Popen(
+                    'osascript -e \'get posix path of posix file \"file://{}\" -- kthxbai\''.format(url),
+                    stdout=subprocess.PIPE,
+                    shell=True)
+                # print p.communicate()[0].strip()
+                result.append(p.communicate()[0].strip())
+                p.wait()
+        else:
+            result = fileList
+
+        self.emit(SIGNAL('sigDropFile(PyObject)'), result)
 
     def setCurrentItemData(self, orm):
         for row, dataORM in enumerate(self.realModel.dataList):

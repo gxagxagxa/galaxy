@@ -74,10 +74,10 @@ class MInjectDataDialog(QDialog):
                 continue
             self.origFileList.append(fileName)
             ap = APATH.APATH(fileName)
-            resultDict = ap.scan()
+            resultDict = ap.scan(recursive=True)
             if isinstance(resultDict, dict):
                 resultList.append(self._addExtraData(resultDict))
-            else:
+            elif isinstance(resultDict, list):
                 for dataDict in resultDict:
                     resultList.append(self._addExtraData(dataDict))
 

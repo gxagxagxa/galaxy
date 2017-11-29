@@ -36,6 +36,9 @@ class DB_UTIL(object):
 
     @classmethod
     def goto(cls, posix_path, relative_orm=None):
+        if posix_path == '/':
+            return [DB_UTIL.get_root()]
+
         if posix_path.startswith('/'):
             root = DB_UTIL.get_root()
         else:

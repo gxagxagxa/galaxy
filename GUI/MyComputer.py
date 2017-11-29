@@ -59,85 +59,120 @@ class MLeftWidget(QWidget):
     def __init__(self, parent=None):
         super(MLeftWidget, self).__init__(parent)
         self.initUI()
+        self.updatePublicList()
+        self.updateFilterList()
+        self.updateViewList()
+        self.updateTagList()
 
     def initUI(self):
-        lab1 = QLabel(u'个人收藏')
-        lab2 = QLabel(u'共享的')
-        lab3 = QLabel(u'标记')
+        self.publicBox = QToolBox()
+        self.publicListWidget = QListWidget()
+        self.connect(self.publicListWidget, SIGNAL('itemClicked(QListWidgetItem*)'), self.slotPublic)
+        self.publicBox.addItem(self.publicListWidget, 'Public View')
 
-        self.favoriteListButton = []
-        self.sharedListButton = []
-        self.tagsListButton = []
-
-        rootButton = QToolButton()
-        rootButton.setText('< Root View >')
-        self.connect(rootButton, SIGNAL('clicked()'), self.slotRoot)
-
-        mainLay = QVBoxLayout()
-        mainLay.addWidget(rootButton)
-        mainLay.addWidget(MHSeparator())
-        mainLay.addWidget(lab1)
-        for i in range(5):
-            button = QToolButton()
-            button.setText('My Filter %d' % (i + 1))
-            self.connect(button, SIGNAL('clicked()'), partial(self.slotFavorite, i + 1))
-            self.favoriteListButton.append(button)
-            mainLay.addWidget(button)
+        self.filterBox = QToolBox()
+        self.filterListWidget = QListWidget()
+        self.connect(self.filterListWidget, SIGNAL('itemClicked(QListWidgetItem*)'), self.slotFilter)
+        self.filterBox.addItem(self.filterListWidget, 'My Filters')
 
         addFilterButton = QToolButton()
         addFilterButton.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         addFilterButton.setText('Filter...')
         addFilterButton.setIcon(QIcon('{}/icon-add.png'.format(IMAGE_PATH)))
         self.connect(addFilterButton, SIGNAL('clicked()'), self.slotAddFilter)
-        mainLay.addWidget(addFilterButton)
-        mainLay.addSpacing(10)
-        mainLay.addWidget(MHSeparator())
-        mainLay.addWidget(lab2)
-        for i in range(5):
-            button = QToolButton()
-            button.setText('Share %d' % (i + 1))
-            self.connect(button, SIGNAL('clicked()'), partial(self.slotShare, i + 1))
-            self.sharedListButton.append(button)
-            mainLay.addWidget(button)
-        mainLay.addSpacing(10)
-        mainLay.addWidget(MHSeparator())
-        mainLay.addWidget(lab3)
+
+        self.viewBox = QToolBox()
+        self.viewListWidget = QListWidget()
+        self.connect(self.viewListWidget, SIGNAL('itemClicked(QListWidgetItem*)'), self.slotShare)
+        self.viewBox.addItem(self.viewListWidget, 'Shared Views')
+
+        self.tagBox = QToolBox()
+        self.tagListWidget = QListWidget()
+        self.connect(self.tagListWidget, SIGNAL('itemClicked(QListWidgetItem*)'), self.slotTag)
+        self.tagBox.addItem(self.tagListWidget, 'Hot Tags')
+
+        splitter = QSplitter()
+        splitter.setOrientation(Qt.Vertical)
+        splitter.addWidget(self.publicBox)
+        splitter.addWidget(self.filterBox)
+        splitter.addWidget(addFilterButton)
+        splitter.addWidget(self.viewBox)
+        splitter.addWidget(self.tagBox)
+
+        splitter.setStretchFactor(0, 15)
+        splitter.setStretchFactor(1, 25)
+        splitter.setStretchFactor(2, 10)
+        splitter.setStretchFactor(3, 20)
+        splitter.setStretchFactor(4, 30)
+
+        mainLay = QVBoxLayout()
+        mainLay.addWidget(splitter)
+        mainLay.addStretch()
+        self.setLayout(mainLay)
+
+    def updatePublicList(self):
+        self.publicListWidget.clear()
+        rootViewItem = QListWidgetItem('ROOT View')
+        rootViewItem.setData(Qt.UserRole, DB_UTIL.get_root())
+        self.publicListWidget.addItem(rootViewItem)
+
+    def updateFilterList(self):
+        self.filterListWidget.clear()
+        for filterORM in sess().query(SEARCH).filter(SEARCH.created_by_name == 'muyanru').all():
+            item = QListWidgetItem(filterORM.name)
+            item.setData(Qt.UserRole, filterORM)
+            self.filterListWidget.addItem(item)
+
+    def updateViewList(self):
+        # TODO: show view
+        self.viewListWidget.clear()
+        for filterORM in sess().query(SEARCH).filter(SEARCH.created_by_name == 'muyanru').all():
+            item = QListWidgetItem(filterORM.name)
+            item.setData(Qt.UserRole, filterORM)
+            self.viewListWidget.addItem(item)
+
+    def updateTagList(self):
+        self.tagListWidget.clear()
         for tagORM in sess().query(TAG).all():
             pix = QPixmap('%s/icon-%s.png' % (IMAGE_PATH, 'tag'))
             mask = pix.mask()
             pix.fill(QColor(getattr(tagORM, 'color')))
             pix.setMask(mask)
-            button = QToolButton()
-            button.setIcon(QIcon(pix))
-            button.setText(tagORM.name)
-            button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-            self.connect(button, SIGNAL('clicked()'), partial(self.slotTag, tagORM))
-            self.tagsListButton.append(button)
-            mainLay.addWidget(button)
+            item = QListWidgetItem(QIcon(pix), tagORM.name)
+            item.setData(Qt.UserRole, tagORM)
+            self.tagListWidget.addItem(item)
 
-        mainLay.addStretch()
-        self.setLayout(mainLay)
+    @Slot(QListWidgetItem)
+    def slotPublic(self, item):
+        orm = item.data(Qt.UserRole)
+        self.emit(SIGNAL('sigShowPublic(PyObject)'), orm)
 
-    def slotRoot(self):
-        self.emit(SIGNAL('sigShowRoot()'))
+    @Slot(QListWidgetItem)
+    def slotFilter(self, item):
+        tagORM = item.data(Qt.UserRole)
+        self.emit(SIGNAL('sigShowFilter(PyObject)'), tagORM)
 
-    @Slot(int)
-    def slotFavorite(self, index):
-        print 'slotFavorite', index
+    @Slot(QListWidgetItem)
+    def slotShare(self, item):
+        tagORM = item.data(Qt.UserRole)
+        self.emit(SIGNAL('sigShowView(PyObject)'), tagORM)
 
-    @Slot(int)
-    def slotShare(self, index):
-        print 'slotShare', index
-
-    @Slot(object)
-    def slotTag(self, tagORM):
+    @Slot(QListWidgetItem)
+    def slotTag(self, item):
+        tagORM = item.data(Qt.UserRole)
         self.emit(SIGNAL('sigShowTag(PyObject)'), tagORM)
 
     def slotAddFilter(self):
         dialog = MFilterEditor(self)
         # dialog.setWindowFlags(Qt.Dialog)
         if dialog.exec_():
-            print dialog.getDataDict()
+            dataDict = dialog.getDataDict()
+            # TODO: search_param
+            print dataDict.get('mode'), dataDict.get('filters')
+            filterORM = SEARCH(name=dataDict.get('name'), search_target=dataDict.get('target'))
+            sess().add(filterORM)
+            sess().commit()
+            self.updateFilterList()
 
 
 class MMultiListViewWidget(QWidget):
@@ -288,6 +323,7 @@ class MBigPictureViewWidget(QWidget):
         orm = DB_UTIL.goto(path)[-1]
         self.listView.slotUpdate(orm.parent)
 
+
 # class MTableViewWidget(QWidget):
 #     def __init__(self, parent=None):
 #         super(MTableViewWidget, self).__init__(parent)
@@ -335,7 +371,7 @@ class MFinder(QMainWindow):
         self.setWindowTitle('Finder')
         self.listViewList = []
         self.initUI()
-        self.slotShowRootView()
+        self.slotShowPublicView(DB_UTIL.get_root())
 
     def initUI(self):
         self.leftWidget = MLeftWidget()
@@ -346,17 +382,23 @@ class MFinder(QMainWindow):
         self.connect(self.multiViewWidget, SIGNAL('sigGoTo(object)'), self.slotGoToNewFinder)
         self.connect(self.bigPictureViewWidget, SIGNAL('sigPathChanged(QString)'), self.slotSetWindowTitle)
         self.connect(self.leftWidget, SIGNAL('sigShowTag(PyObject)'), self.slotShowTagChildren)
-        self.connect(self.leftWidget, SIGNAL('sigShowRoot()'), self.slotShowRootView)
+        self.connect(self.leftWidget, SIGNAL('sigShowPublic(PyObject)'), self.slotShowPublicView)
         # self.tableViewWidget = MTableViewWidget()
 
         self.stackWidget.addWidget(self.multiViewWidget)
         self.stackWidget.addWidget(self.bigPictureViewWidget)
         # self.stackWidget.addWidget(self.tableViewWidget)
 
+        splitter = QSplitter()
+        splitter.setOrientation(Qt.Horizontal)
+        splitter.addWidget(self.leftWidget)
+        splitter.addWidget(self.stackWidget)
+        splitter.setStretchFactor(0, 20)
+        splitter.setStretchFactor(1, 80)
+
         centralWidget = QWidget()
         centralLay = QHBoxLayout()
-        centralLay.addWidget(self.leftWidget)
-        centralLay.addWidget(self.stackWidget)
+        centralLay.addWidget(splitter)
         centralWidget.setLayout(centralLay)
         self.setCentralWidget(centralWidget)
 
@@ -456,7 +498,9 @@ class MFinder(QMainWindow):
 
     def slotSwitchViewMode(self, index):
         self.stackWidget.setCurrentIndex(index)
-        self.stackWidget.currentWidget().slotSwitchTo(self.windowTitle())
+        path = self.windowTitle()
+        if not path.startswith('/'): path = '/'
+        self.stackWidget.currentWidget().slotSwitchTo(path)
 
     @Slot()
     def slotCopy(self):
@@ -483,9 +527,9 @@ class MFinder(QMainWindow):
     def slotShowTagChildren(self, tagORM):
         self.multiViewWidget.rootListView.slotUpdate(tagORM)
 
-    @Slot()
-    def slotShowRootView(self):
-        self.multiViewWidget.rootListView.slotUpdate(DB_UTIL.get_root())
+    @Slot(object)
+    def slotShowPublicView(self, orm):
+        self.multiViewWidget.rootListView.slotUpdate(orm)
 
     @Slot(int)
     def slotCurrentModeChanged(self, index):

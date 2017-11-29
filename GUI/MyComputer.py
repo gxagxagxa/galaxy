@@ -526,10 +526,12 @@ class MFinder(QMainWindow):
     @Slot(object)
     def slotShowTagChildren(self, tagORM):
         self.multiViewWidget.rootListView.slotUpdate(tagORM)
+        self.multiViewWidget.clearDownstreamListView(self.multiViewWidget.rootListView)
 
     @Slot(object)
     def slotShowPublicView(self, orm):
         self.multiViewWidget.rootListView.slotUpdate(orm)
+        self.multiViewWidget.clearDownstreamListView(self.multiViewWidget.rootListView)
 
     @Slot(int)
     def slotCurrentModeChanged(self, index):

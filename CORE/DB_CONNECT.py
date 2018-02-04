@@ -10,8 +10,8 @@ from DB_TABLE import *
 class DB_CONNECT(object):
     def __init__(self,
                  # connection='sqlite:////Users/andyguo/Desktop/ssg.db',
-                 # connection='postgresql+psycopg2://postgres:More@TD_2017@core_db.more.com:5432/postgres',
-                 connection='postgresql+psycopg2://postgres:postgres@138.197.147.222:5432/postgres',
+                 connection='postgresql+psycopg2://postgres:More@TD_2017@core_db.more.com:5432/postgres',
+                 # connection='postgresql+psycopg2://postgres:postgres@138.197.147.222:5432/postgres',
                  echo=False,
                  isolation_level='READ UNCOMMITTED'):
         self.connection = connection
